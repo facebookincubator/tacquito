@@ -1,0 +1,134 @@
+# resuable references
+authenticator_type_bcrypt: &authenticator_type_bcrypt 1
+
+bcrypt: &bcrypt
+  type: *authenticator_type_bcrypt
+  options:
+    # hashed value is `cisco`
+    hash: 24326124313024596c6e6c3152305547304d55646f384c713254707165564836724f4664494a4f4266463864716362304632557a39635363582f4436
+
+privlvl_root: &privlvl_root 15
+action_deny: &action_deny 1
+action_permit: &action_permit 2
+
+# services
+exec: &exec
+  name: exec
+  set_values:
+    - name: priv-lvl
+      values: [ *privlvl_root ]
+
+shell: &shell
+  name: shell
+  match:
+    # a rule that only matches if this service is applied to the localhost scope
+    - name: scope
+      values: [ localhost ]
+  set_values:
+    - name: magic
+      values: [ vendor-strings ]
+
+# commands
+configure: &configure
+  name: configure
+  # commands are all regex based
+  match: [.*]
+  action: *action_permit
+
+show: &show
+  name: show
+  match: [.*]
+  action: *action_permit
+
+bash: &bash
+  name: bash
+  match:
+    - ls.*
+    - pwd.*
+  action: *action_permit
+
+pipe: &pipe
+  name: pipe
+  match:
+    - grep.*
+    - tail.*
+  action: *action_permit
+
+# reusable references useful for groups
+#
+
+# accounter type which maps to tacquito/cmds/server/config/accounters/local
+accounter_type_file: &accounter_type_file 3
+
+# local file accounter
+file_accounter: &file_accounter
+  # name is simply for the reader
+  name: example_accounter
+  # accounter type - this must be injected in main.go
+  type: *accounter_type_file
+
+# groups
+rw: &rw
+  # name must be globally unique
+  name: read_write
+  # service references
+  services:
+    - *exec
+    - *shell
+  # command references
+  commands:
+    - *bash
+    - *configure
+    - *pipe
+    - *show
+  # authenticator backend - this must be injected in main.go
+  authenticator: *bcrypt
+  # accounter backend - this must be injected in main.go
+  accounter: *file_accounter
+
+
+# finally, declare users
+users:
+  # name must be unique per scope
+  - name: cisco
+    # scopes to apply user to
+    scopes: ["localhost"]
+    # groups to apply on user
+    groups: [*rw]
+    # nb, no user level overrides exist so all user settings
+    # get derived from the groups applied above
+
+# reusable references
+#
+
+# handler type used in SecretConfig
+handler_type_start: &handler_type_start 1
+
+# provider type used in SecretConfig
+provider_type_prefix: &provider_type_prefix 1
+
+# SecretProviders
+secrets:
+  # SecretConfig
+  - name: localhost
+    # Keychain
+    secret:
+      group: tacquito
+      # ideally this is not stored here in the clear but a safe secret backend is used to store/fetch from
+      key: fooman
+    # Handler - this must be injected in main.go
+    handler:
+      type: *handler_type_start
+    # SecretProviderType - this must be injected in main.go
+    type: *provider_type_prefix
+    # Options are specific to the provider type and are map[str,str]
+    # see provider implementation for details
+    # tacquito/cmds/server/config/
+    options:
+      prefixes: |
+        [
+          "::0/0"
+        ]
+
+prefix_allow: ["::0/0", "10.10.10.10/32"]
+prefix_deny: ["192.168.1.1/32"]
