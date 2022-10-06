@@ -111,7 +111,7 @@ func (r Request) Fields(keys ...ContextKey) map[string]string {
 		for _, key := range keys {
 			v, ok := r.Context.Value(key).(string)
 			if ok {
-				allFields[string(ContextConnRemoteAddr)] = v
+				allFields[string(key)] = v
 			}
 		}
 	}
