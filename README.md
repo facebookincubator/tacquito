@@ -147,11 +147,11 @@ Handlers are everywhere.  They can be middleware and anything in between a clien
 
 
 Interface:
-```
-Handle(respose tq.Response, request tq.Request)
+```go
+Handle(response tq.Response, request tq.Request)
 ```
 Higher Order Function:
-```
+```go
 tq.HandlerFunc(
     func(response tq.Response, request tq.Request)
 )
