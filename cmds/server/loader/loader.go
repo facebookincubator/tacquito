@@ -239,10 +239,14 @@ func (l *Loader) updates() {
 			// prefixFilter will log to prom counters and also act as a quick fail for prefixes that do not pass
 			// muster.  this pevents unnecessary load on scanning SecretProviders
 			if prefixDeny.deny(q.remote) {
-				l.Infof(l.ctx, "remote address connection not allowed by prefixDeny filter [%v]", q.remote.String())
+				q.cb <- secretProvider{err: fmt.Errorf("remote address connection not allowed by prefixDeny filter [%v]", q.remote.String())}
+				close(q.cb)
+				break
 			}
 			if !prefixAllow.allow(q.remote) {
-				l.Infof(l.ctx, "remote address connection not allowed by prefixAllow filter [%v]", q.remote.String())
+				q.cb <- secretProvider{err: fmt.Errorf("remote address connection not allowed by prefixAllow filter [%v]", q.remote.String())}
+				close(q.cb)
+				break
 			}
 			secret, handler, err := l.get(q.ctx, providers, q.remote)
 			q.cb <- secretProvider{secret: secret, handler: handler, err: err}
