@@ -13,10 +13,15 @@ import (
 
 var (
 	// gauges and counters
+	serveReceived = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "tacquito",
+		Name:      "serve_received",
+		Help:      "total number of packets received within the server",
+	})
 	serveAccepted = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "tacquito",
 		Name:      "serve_accepted",
-		Help:      "number of accepted connections within the server",
+		Help:      "number of accepted connections within the server that are currently being processed",
 	})
 	serveAcceptedError = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "tacquito",
@@ -116,6 +121,7 @@ var (
 
 func init() {
 	// gauges and counters
+	prometheus.MustRegister(serveReceived)
 	prometheus.MustRegister(serveAccepted)
 	prometheus.MustRegister(serveAcceptedError)
 	prometheus.MustRegister(handlers)

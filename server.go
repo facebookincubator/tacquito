@@ -75,6 +75,7 @@ func (s *Server) Serve(ctx context.Context, listener DeadlineListener) error {
 		case <-ctx.Done():
 			return nil
 		default:
+			serveReceived.Inc()
 			// the 10 second deadline implies there is a limit to how long downstream handlers
 			// may take to respond to a client.  Clients may also give up much sooner than this
 			// deadline.  Be mindful of this when adjusting.
