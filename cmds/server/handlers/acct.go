@@ -28,6 +28,7 @@ type AccountingRequest struct {
 func (a *AccountingRequest) Handle(response tq.Response, request tq.Request) {
 	var body tq.AcctRequest
 	if err := tq.Unmarshal(request.Body, &body); err != nil {
+		a.Errorf(request.Context, "unable to unmarshal accounting packet : %v", err)
 		accountingHandleUnexpectedPacket.Inc()
 		accountingHandleError.Inc()
 		response.Reply(
