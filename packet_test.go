@@ -73,12 +73,12 @@ func TestHeaderMarshalUnmarshal(t *testing.T) {
 
 	buf, err := v.MarshalBinary()
 	assert.NoError(t, err)
-	spew.Dump(buf)
+	t.Log(spew.Sdump(buf))
 
 	decoded := &Header{}
 	err = decoded.UnmarshalBinary(buf)
 	assert.NoError(t, err)
-	spew.Dump(decoded)
+	t.Log(spew.Sdump(decoded))
 	assert.Equal(t, v, decoded)
 }
 
@@ -93,12 +93,12 @@ func TestAuthenStartMarshalUnmarshal(t *testing.T) {
 	)
 	buf, err := v.MarshalBinary()
 	assert.NoError(t, err)
-	spew.Dump(buf)
+	t.Log(spew.Sdump(buf))
 
 	decoded := &AuthenStart{}
 	err = decoded.UnmarshalBinary(buf)
 	assert.NoError(t, err)
-	spew.Dump(decoded)
+	t.Log(spew.Sdump(decoded))
 	assert.Equal(t, v, decoded)
 }
 
@@ -110,12 +110,12 @@ func TestAuthenReplyMarshalUnmarshal(t *testing.T) {
 
 	buf, err := v.MarshalBinary()
 	assert.NoError(t, err)
-	spew.Dump(buf)
+	t.Log(spew.Sdump(buf))
 
 	decoded := &AuthenReply{}
 	err = decoded.UnmarshalBinary(buf)
 	assert.NoError(t, err)
-	spew.Dump(decoded)
+	t.Log(spew.Sdump(decoded))
 	assert.Equal(t, v, decoded)
 }
 
@@ -126,12 +126,12 @@ func TestAuthenContinueMarshalUnmarshal(t *testing.T) {
 
 	buf, err := v.MarshalBinary()
 	assert.NoError(t, err)
-	spew.Dump(buf)
+	t.Log(spew.Sdump(buf))
 
 	decoded := &AuthenContinue{}
 	err = decoded.UnmarshalBinary(buf)
 	assert.NoError(t, err)
-	spew.Dump(decoded)
+	t.Log(spew.Sdump(decoded))
 	assert.Equal(t, v, decoded)
 }
 
@@ -157,12 +157,12 @@ func TestAuthorRequestMarshalUnmarshal(t *testing.T) {
 	)
 	buf, err := v.MarshalBinary()
 	assert.Nil(t, err)
-	spew.Dump(buf)
+	t.Log(spew.Sdump(buf))
 
 	decoded := &AuthorRequest{}
 	err = decoded.UnmarshalBinary(buf)
 	assert.NoError(t, err)
-	spew.Dump(decoded)
+	t.Log(spew.Sdump(decoded))
 	assert.Equal(t, v, decoded)
 
 	// arg is too short < 2
@@ -201,12 +201,12 @@ func TestAuthorReplyMarshalUnmarshal(t *testing.T) {
 	)
 	buf, err := v.MarshalBinary()
 	assert.NoError(t, err)
-	spew.Dump(buf)
+	t.Log(spew.Sdump(buf))
 
 	decoded := &AuthorReply{}
 	err = decoded.UnmarshalBinary(buf)
 	assert.NoError(t, err)
-	spew.Dump(decoded)
+	t.Log(spew.Sdump(decoded))
 	assert.Equal(t, v, decoded)
 }
 
@@ -226,12 +226,12 @@ func TestAcctRequestMarshalUnmarshal(t *testing.T) {
 
 	buf, err := v.MarshalBinary()
 	assert.NoError(t, err)
-	spew.Dump(buf)
+	t.Log(spew.Sdump(buf))
 
 	decoded := &AcctRequest{}
 	err = decoded.UnmarshalBinary(buf)
 	assert.NoError(t, err)
-	spew.Dump(decoded)
+	t.Log(spew.Sdump(decoded))
 	assert.Equal(t, v, decoded)
 }
 
@@ -243,12 +243,12 @@ func TestAcctReplyMarshalUnmarshal(t *testing.T) {
 	)
 	buf, err := v.MarshalBinary()
 	assert.NoError(t, err)
-	spew.Dump(buf)
+	t.Log(spew.Sdump(buf))
 
 	decoded := &AcctReply{}
 	err = decoded.UnmarshalBinary(buf)
 	assert.NoError(t, err)
-	spew.Dump(decoded)
+	t.Log(spew.Sdump(decoded))
 	assert.Equal(t, v, decoded)
 }
 

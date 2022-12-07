@@ -45,7 +45,7 @@ func TestDecrypt(t *testing.T) {
 	var body AuthenStart
 	err = Unmarshal(packet.Body, &body)
 	assert.NoError(t, err)
-	spew.Dump(body)
+	t.Log(spew.Sdump(body))
 }
 
 func TestEncrypt(t *testing.T) {
@@ -72,14 +72,14 @@ func TestEncrypt(t *testing.T) {
 		),
 		SetPacketBody(body),
 	)
-	spew.Dump(packet)
+	t.Log(spew.Sdump(packet))
 	err := crypt([]byte("fooman"), packet)
 	assert.NoError(t, err)
-	spew.Dump(packet)
+	t.Log(spew.Sdump(packet))
 	assert.Equal(t, encrypted[12:], packet.Body)
 	err = crypt([]byte("fooman"), packet)
 	assert.NoError(t, err)
-	spew.Dump(packet)
+	t.Log(spew.Sdump(packet))
 	assert.Equal(t, decrypted, packet.Body)
 }
 
