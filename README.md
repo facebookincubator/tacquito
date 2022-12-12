@@ -14,7 +14,7 @@ cd cmds/server && go run .
 ```
 ### Client
 ```
-cd cmds/client && go . -username cisco -password cisco
+cd cmds/client && go run . -username cisco -password cisco
 ```
 
 Running the above will show a simple authentication exchange.
