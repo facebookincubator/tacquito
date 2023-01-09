@@ -8,6 +8,7 @@
 package tacquito
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
@@ -147,4 +148,46 @@ func TestPacketEncryptDecryptUnencryptFlagSet(t *testing.T) {
 	err = crypt(secret, packet)
 	assert.NoError(t, err)
 	assert.Equal(t, b, packet.Body)
+}
+
+// benchTest is used for allocation testing
+type benchTest struct {
+	name     string
+	fn       func(b *testing.B)
+	expected func(name string, r testing.BenchmarkResult)
+}
+
+func TestCrypterAllocation(t *testing.T) {
+	tests := []benchTest{
+		{
+			name: "encrypt",
+			fn:   BenchmarkCrypterAllocation,
+			expected: func(name string, r testing.BenchmarkResult) {
+				t.Log(spew.Sdump(r))
+				expectedAllocs := 6
+				actual := r.AllocsPerOp()
+				assert.EqualValues(t, expectedAllocs, actual, fmt.Sprintf("%s allocations were not nominal; wanted %v got %v", name, expectedAllocs, actual))
+			},
+		},
+	}
+	for _, test := range tests {
+		r := testing.Benchmark(test.fn)
+		test.expected(test.name, r)
+	}
+}
+
+// BenchmarkCrypterAllocation benchmarks the allocs/op crypter takes when called with crypted
+// or decrypted bytes.  Since the op is the same in both directions we only test one form of it
+func BenchmarkCrypterAllocation(b *testing.B) {
+	encrypted := getEncryptedBytes()
+	var header Header
+	Unmarshal(encrypted[:12], &header)
+	packet := &Packet{Header: &header, Body: encrypted[12:]}
+	secret := []byte("fooman")
+
+	// record allocations regardless of go test -test.bench
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		crypt(secret, packet)
+	}
 }
