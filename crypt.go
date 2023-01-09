@@ -57,27 +57,28 @@ func crypt(secret []byte, p *Packet) error {
 		return err
 	}
 
+	headerLen := int(p.Header.Length)
+	seqNo := []byte{byte(p.Header.SeqNo)}
 	lastHash := make([]byte, 0, 16)
-	pad := make([]byte, 0, p.Header.Length)
-	hash := md5.New()
-	for len(pad) < int(p.Header.Length) {
-		hash.Reset()
-		hash.Write(sessionID)
-		hash.Write(secret)
-		hash.Write(version)
-		hash.Write([]byte{byte(p.Header.SeqNo)})
-		hash.Write(lastHash)
+	pad := make([]byte, 0, 80)
+	h := md5.New()
+	for len(pad) < headerLen {
+		h.Reset()
+		h.Write(sessionID)
+		h.Write(secret)
+		h.Write(version)
+		h.Write(seqNo)
+		h.Write(lastHash)
 
-		lastHash = hash.Sum(nil)
+		lastHash = h.Sum(nil)
 
 		pad = append(pad, lastHash[:]...)
 
 		// truncate to length of body
-		if len(pad) > int(p.Header.Length) {
-			pad = pad[:int(p.Header.Length)]
+		if len(pad) > headerLen {
+			pad = pad[:headerLen]
 		}
 	}
-
 	// perform xor ops
 	for i, b := range p.Body {
 		p.Body[i] = b ^ pad[i]

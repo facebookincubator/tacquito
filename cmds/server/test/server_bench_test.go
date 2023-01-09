@@ -72,7 +72,7 @@ func TestPacketExchangeAsciiLoginUsingSharedClientAllocation(t *testing.T) {
 			fn:   BenchmarkPacketExchangeAsciiLoginUsingSharedClient,
 			expected: func(name string, r testing.BenchmarkResult) {
 				t.Log(spew.Sdump(r))
-				expectedAllocs := 31
+				expectedAllocs := 25
 				actual := r.AllocsPerOp()
 				assert.EqualValues(t, expectedAllocs, actual, fmt.Sprintf("%s allocations were not nominal; wanted %v got %v", name, expectedAllocs, actual))
 			},
