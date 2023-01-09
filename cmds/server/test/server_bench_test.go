@@ -10,10 +10,12 @@ package test
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"testing"
 
 	tq "github.com/facebookincubator/tacquito"
+	"github.com/facebookincubator/tacquito/cmds/server/log"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +24,7 @@ import (
 // BenchmarkPacketExchangeAsciiLoginSingleClient will test the full ascii login flow
 // using a single client instance
 func BenchmarkPacketExchangeAsciiLoginUsingSharedClient(b *testing.B) {
-	logger := NewDefaultLogger(0) // no logs
+	logger := log.New(0, io.Discard) // no logs
 	ctx := context.Background()
 	sp, err := MockSecretProvider(ctx, logger, "testdata/test_config.yaml")
 	assert.NoError(b, err)
@@ -85,7 +87,7 @@ func TestPacketExchangeAsciiLoginUsingSharedClientAllocation(t *testing.T) {
 // BenchmarkPacketExchangeAsciiLoginSingleClient will test the full ascii login flow
 // using a new client instance each loop
 func BenchmarkPacketExchangeAsciiLoginUsingNewClient(b *testing.B) {
-	logger := NewDefaultLogger(0) // no logs
+	logger := log.New(0, io.Discard) // no logs
 	ctx := context.Background()
 	sp, err := MockSecretProvider(ctx, logger, "testdata/test_config.yaml")
 	assert.NoError(b, err)

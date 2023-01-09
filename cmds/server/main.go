@@ -20,6 +20,7 @@ import (
 	"github.com/facebookincubator/tacquito/cmds/server/config/accounters/local"
 	"github.com/facebookincubator/tacquito/cmds/server/config/authenticators/bcrypt"
 	"github.com/facebookincubator/tacquito/cmds/server/config/authorizers/stringy"
+	"github.com/facebookincubator/tacquito/cmds/server/log"
 
 	"github.com/facebookincubator/tacquito/cmds/server/config/secret"
 	"github.com/facebookincubator/tacquito/cmds/server/config/secret/prefix"
@@ -41,7 +42,7 @@ var (
 
 func main() {
 	flag.Parse()
-	logger := newDefaultLogger(*level)
+	logger := log.New(*level, os.Stderr)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

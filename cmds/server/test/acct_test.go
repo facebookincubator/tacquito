@@ -11,9 +11,11 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"testing"
 
 	tq "github.com/facebookincubator/tacquito"
+	"github.com/facebookincubator/tacquito/cmds/server/log"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
@@ -67,7 +69,7 @@ func acctFlagStart(t *testing.T) []Test {
 }
 
 func TestAccounting(t *testing.T) {
-	logger := NewDefaultLogger(30) // no logs
+	logger := log.New(30, os.Stderr)
 	ctx := context.Background()
 	sp, err := MockSecretProvider(ctx, logger, "testdata/test_config.yaml")
 	assert.NoError(t, err)
