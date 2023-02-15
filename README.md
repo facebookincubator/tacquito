@@ -6,7 +6,8 @@ Tacquito provides an [rfc8907](https://tools.ietf.org/html/rfc8907) implementati
 
 # Quick Start
 <img src="./docs/imgs/tacquito-mascot.png" alt="Tacquito Mascot" align="right" hspace="25" vspace="25" />
-You can easily start a server using the example yaml config by opening a shell in the server and client directories.  EG, you might have it in `/home/$USER/go/src/github.com/facebookincubator/tacquito`.
+
+You can easily start a server using the example yaml config by opening a shell in the server and client directories.  E.g., you might have it in `/home/$USER/go/src/github.com/facebookincubator/tacquito`.
 
 ### Server
 ```
