@@ -78,6 +78,10 @@ func (al *CtxLogger) Gather() {
 		al.req.Context = context.WithValue(al.req.Context, tq.ContextRemoteAddr, fields["rem-addr"])
 		al.req.Context = context.WithValue(al.req.Context, tq.ContextReqArgs, fields["args"])
 		al.req.Context = context.WithValue(al.req.Context, tq.ContextAcctType, fields["type"])
+	case "AuthorRequest":
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextUser, fields["user"])
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextRemoteAddr, fields["rem-addr"])
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextReqArgs, fields["args"])
 	}
 }
 

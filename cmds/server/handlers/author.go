@@ -53,5 +53,5 @@ func (a *AuthorizeRequest) Handle(response tq.Response, request tq.Request) {
 		)
 		return
 	}
-	c.Authorizer.Handle(response, request)
+	NewCtxLogger(a.loggerProvider, request, c.Authorizer).Handle(response, request)
 }
