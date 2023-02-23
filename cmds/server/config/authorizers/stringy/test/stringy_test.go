@@ -57,6 +57,7 @@ func (r *mockedResponse) Write(p *tq.Packet) (int, error) { return 0, nil }
 func (r *mockedResponse) Next(next tq.Handler) {}
 
 func (r *mockedResponse) RegisterWriter(mw io.Writer) {}
+func (r *mockedResponse) PopWriter()                  {}
 
 // newAuthorRequest ...
 func newAuthorRequest(username string, args tq.Args) tq.Request {

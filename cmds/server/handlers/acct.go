@@ -54,5 +54,5 @@ func (a *AccountingRequest) Handle(response tq.Response, request tq.Request) {
 		)
 		return
 	}
-	c.Accounting.Handle(response, request)
+	NewCtxLogger(a.loggerProvider, request, c.Accounting).Handle(response, request)
 }

@@ -85,6 +85,12 @@ func (r *response) RegisterWriter(mw io.Writer) {
 	r.writers = append(r.writers, mw)
 }
 
+func (r *response) PopWriter() {
+	if len(r.writers) > 0 {
+		r.writers = r.writers[:len(r.writers)-1]
+	}
+}
+
 // Response controls what we send back to the client.  Calls to Write should be considered final on the
 // packet back to the client.  You may not call Exchange after Write.
 type Response interface {
@@ -92,6 +98,7 @@ type Response interface {
 	Write(p *Packet) (int, error)
 	Next(next Handler)
 	RegisterWriter(io.Writer)
+	PopWriter()
 }
 
 // Request provides access to the config for this net.Conn and also the packet itself

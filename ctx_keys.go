@@ -27,3 +27,9 @@ const ContextUser ContextKey = "user"
 
 // ContextRemoteAddr ...
 const ContextRemoteAddr ContextKey = "rem-addr"
+
+// ContextReqArgs for logging context arguments with replies
+const ContextReqArgs ContextKey = "req-args"
+
+// ContextAcctType ...
+const ContextAcctType ContextKey = "type"

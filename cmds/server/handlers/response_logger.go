@@ -34,7 +34,7 @@ func (l *ResponseLogger) Write(p []byte) (int, error) {
 		return 0, err
 	}
 	request := tq.Request{Header: *packet.Header, Body: packet.Body[:], Context: l.ctx}
-	l.Record(l.ctx, request.Fields(tq.ContextConnRemoteAddr, tq.ContextUser, tq.ContextRemoteAddr))
+	l.Record(l.ctx, request.Fields(tq.ContextConnRemoteAddr, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextAcctType))
 
 	return 0, nil
 }
@@ -73,6 +73,11 @@ func (al *CtxLogger) Gather() {
 		if v, ok := fields["user-msg"]; ok && v != "" {
 			al.req.Context = context.WithValue(al.req.Context, tq.ContextUser, v)
 		}
+	case "AcctRequest":
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextUser, fields["user"])
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextRemoteAddr, fields["rem-addr"])
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextReqArgs, fields["args"])
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextAcctType, fields["type"])
 	}
 }
 
@@ -84,7 +89,12 @@ func (al *CtxLogger) Handle(response tq.Response, request tq.Request) {
 	case tq.Authenticate:
 		r := NewResponseLogger(request.Context, al.loggerProvider, al.next)
 		r.Handle(response, request)
+	case tq.Accounting, tq.Authorize:
+		response.PopWriter() // this replaces the existing response logger object with the one below
+		r := NewResponseLogger(request.Context, al.loggerProvider, al.next)
+		r.Handle(response, request)
 	default:
+		al.Infof(request.Context, "[%v] unknown packet code detected: %v", request.Header.SessionID, request.Header.Type)
 		al.next.Handle(response, request)
 	}
 
