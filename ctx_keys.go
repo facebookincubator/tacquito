@@ -21,3 +21,9 @@ const ContextSessionID ContextKey = "session-id"
 // ContextConnRemoteAddr is used to store the net.conn remoteAddr within a session.  This value would be present
 // in any sub contexts that share the underlying net.conn
 const ContextConnRemoteAddr ContextKey = "conn-remote-addr"
+
+// ContextUser is used to store the username within a session.
+const ContextUser ContextKey = "user"
+
+// ContextRemoteAddr ...
+const ContextRemoteAddr ContextKey = "rem-addr"

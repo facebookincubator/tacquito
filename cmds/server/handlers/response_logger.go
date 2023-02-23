@@ -33,9 +33,9 @@ func (l *ResponseLogger) Write(p []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	// TODO make context available here for FieldsWithContext(tq.ContextConnRemoteAddr)
-	request := tq.Request{Header: *packet.Header, Body: packet.Body[:]}
-	l.Record(l.ctx, request.Fields())
+	request := tq.Request{Header: *packet.Header, Body: packet.Body[:], Context: l.ctx}
+	l.Record(l.ctx, request.Fields(tq.ContextConnRemoteAddr, tq.ContextUser, tq.ContextRemoteAddr))
+
 	return 0, nil
 }
 
@@ -43,4 +43,49 @@ func (l *ResponseLogger) Write(p []byte) (int, error) {
 func (l *ResponseLogger) Handle(response tq.Response, request tq.Request) {
 	response.RegisterWriter(l)
 	l.next.Handle(response, request)
+}
+
+// NewCtxLogger will wrap another handler as middleware.  Next is the actual handler
+// that will be called by the server after being wrapped inside a response logger
+func NewCtxLogger(l loggerProvider, request tq.Request, next tq.Handler) *CtxLogger {
+	return &CtxLogger{loggerProvider: l, req: request, next: next}
+}
+
+// CtxLogger is a middleware handler that logs responses from the server
+type CtxLogger struct {
+	loggerProvider
+	req  tq.Request
+	next tq.Handler
+}
+
+// Gather will get fields from a request
+func (al *CtxLogger) Gather() {
+	fields := al.req.Fields()
+	switch fields["packet-type"] {
+	case "AuthenStart":
+		if v, ok := fields["user"]; ok && v != "" {
+			al.req.Context = context.WithValue(al.req.Context, tq.ContextUser, v)
+		}
+		if v, ok := fields["rem-addr"]; ok && v != "" {
+			al.req.Context = context.WithValue(al.req.Context, tq.ContextRemoteAddr, v)
+		}
+	case "AuthenContinue":
+		if v, ok := fields["user-msg"]; ok && v != "" {
+			al.req.Context = context.WithValue(al.req.Context, tq.ContextUser, v)
+		}
+	}
+}
+
+// Handle implements a middleware logger for next
+func (al *CtxLogger) Handle(response tq.Response, request tq.Request) {
+	al.Gather()
+	request.Context = al.req.Context
+	switch request.Header.Type {
+	case tq.Authenticate:
+		r := NewResponseLogger(request.Context, al.loggerProvider, al.next)
+		r.Handle(response, request)
+	default:
+		al.next.Handle(response, request)
+	}
+
 }

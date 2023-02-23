@@ -38,7 +38,7 @@ func (a *AuthenticateASCII) Handle(response tq.Response, request tq.Request) {
 		// client didn't send us a username to start with
 		authenASCIIHandleNeedUsername.Inc()
 		a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr))
-		response.Next(NewResponseLogger(request.Context, a.loggerProvider, tq.HandlerFunc(a.getUsername)))
+		response.Next(NewCtxLogger(a.loggerProvider, request, tq.HandlerFunc(a.getUsername)))
 		response.Reply(
 			tq.NewAuthenReply(
 				tq.SetAuthenReplyStatus(tq.AuthenStatusGetUser),
@@ -87,7 +87,7 @@ func (a *AuthenticateASCII) getUsername(response tq.Response, request tq.Request
 		}
 		a.username = string(body.UserMessage)
 	}
-	response.Next(NewResponseLogger(request.Context, a.loggerProvider, tq.HandlerFunc(a.getPassword)))
+	response.Next(NewCtxLogger(a.loggerProvider, request, tq.HandlerFunc(a.getPassword)))
 	response.Reply(
 		tq.NewAuthenReply(
 			tq.SetAuthenReplyStatus(tq.AuthenStatusGetPass),
