@@ -33,3 +33,9 @@ const ContextReqArgs ContextKey = "req-args"
 
 // ContextAcctType ...
 const ContextAcctType ContextKey = "type"
+
+// ContextPrivLvl ...
+const ContextPrivLvl ContextKey = "priv-lvl"
+
+// ContextPort ...
+const ContextPort ContextKey = "port"

@@ -34,7 +34,7 @@ func (l *ResponseLogger) Write(p []byte) (int, error) {
 		return 0, err
 	}
 	request := tq.Request{Header: *packet.Header, Body: packet.Body[:], Context: l.ctx}
-	l.Record(l.ctx, request.Fields(tq.ContextConnRemoteAddr, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextAcctType))
+	l.Record(l.ctx, request.Fields(tq.ContextConnRemoteAddr, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextAcctType, tq.ContextPrivLvl, tq.ContextPort))
 
 	return 0, nil
 }
@@ -66,9 +66,10 @@ func (al *CtxLogger) Gather() {
 		if v, ok := fields["user"]; ok && v != "" {
 			al.req.Context = context.WithValue(al.req.Context, tq.ContextUser, v)
 		}
-		if v, ok := fields["rem-addr"]; ok && v != "" {
-			al.req.Context = context.WithValue(al.req.Context, tq.ContextRemoteAddr, v)
-		}
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextRemoteAddr, fields["remote-addr"])
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextPort, fields["port"])
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextPrivLvl, fields["priv-lvl"])
+
 	case "AuthenContinue":
 		if v, ok := fields["user-msg"]; ok && v != "" {
 			al.req.Context = context.WithValue(al.req.Context, tq.ContextUser, v)
@@ -78,10 +79,14 @@ func (al *CtxLogger) Gather() {
 		al.req.Context = context.WithValue(al.req.Context, tq.ContextRemoteAddr, fields["rem-addr"])
 		al.req.Context = context.WithValue(al.req.Context, tq.ContextReqArgs, fields["args"])
 		al.req.Context = context.WithValue(al.req.Context, tq.ContextAcctType, fields["type"])
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextPort, fields["port"])
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextPrivLvl, fields["priv-lvl"])
 	case "AuthorRequest":
 		al.req.Context = context.WithValue(al.req.Context, tq.ContextUser, fields["user"])
 		al.req.Context = context.WithValue(al.req.Context, tq.ContextRemoteAddr, fields["rem-addr"])
 		al.req.Context = context.WithValue(al.req.Context, tq.ContextReqArgs, fields["args"])
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextPort, fields["port"])
+		al.req.Context = context.WithValue(al.req.Context, tq.ContextPrivLvl, fields["priv-lvl"])
 	}
 }
 
