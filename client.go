@@ -89,6 +89,15 @@ func (c *Client) Send(p *Packet) (*Packet, error) {
 
 }
 
+// SendOnly sends a packet to the server. It does not decode the response.
+func (c *Client) SendOnly(p *Packet) error {
+	_, err := c.crypter.write(p)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Close ...
 func (c *Client) Close() error {
 	return c.crypter.Close()
