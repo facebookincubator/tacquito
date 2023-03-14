@@ -165,9 +165,9 @@ func (c *crypter) read() (*Packet, error) {
 		return nil, err
 	} else if reply != nil {
 		if _, err := c.write(reply); err != nil {
-			return nil, fmt.Errorf("bad secret, crypt write fail for session [%v]: %v", p.Header.SessionID, err)
+			return nil, fmt.Errorf("bad secret, crypt write fail for ip [%s]: %v", c.RemoteAddr().String(), err)
 		}
-		return nil, fmt.Errorf("bad secret detected for sessionID [%v]", p.Header.SessionID)
+		return nil, fmt.Errorf("bad secret detected for ip [%s]", c.RemoteAddr().String())
 	}
 
 	crypterRead.Inc()
