@@ -15,13 +15,14 @@ import (
 
 // NewAuthenticatePAP creates a scoped handler for PAP authentication exchanges
 func NewAuthenticatePAP(l loggerProvider, c configProvider) *AuthenticatePAP {
-	return &AuthenticatePAP{loggerProvider: l, configProvider: c}
+	return &AuthenticatePAP{loggerProvider: l, configProvider: c, recorder: newPacketLogger(l)}
 }
 
 // AuthenticatePAP is the main entry for pap authenticate exchanges
 type AuthenticatePAP struct {
 	loggerProvider
 	configProvider
+	recorder
 	username string
 }
 
@@ -83,5 +84,6 @@ func (a *AuthenticatePAP) Handle(response tq.Response, request tq.Request) {
 		)
 		return
 	}
-	c.Authenticate.Handle(response, request)
+	a.RecordCtx(&request, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextPort, tq.ContextPrivLvl)
+	a.Next(c.Authenticate).Handle(response, request)
 }

@@ -15,13 +15,14 @@ import (
 
 // NewAccountingRequest ...
 func NewAccountingRequest(l loggerProvider, c configProvider) *AccountingRequest {
-	return &AccountingRequest{loggerProvider: l, configProvider: c}
+	return &AccountingRequest{loggerProvider: l, configProvider: c, recorder: newPacketLogger(l)}
 }
 
 // AccountingRequest is the main entry point for incoming AcctRequest packets
 type AccountingRequest struct {
 	loggerProvider
 	configProvider
+	recorder
 }
 
 // Handle ...
@@ -54,5 +55,6 @@ func (a *AccountingRequest) Handle(response tq.Response, request tq.Request) {
 		)
 		return
 	}
-	NewCtxLogger(a.loggerProvider, request, c.Accounting).Handle(response, request)
+	a.RecordCtx(&request, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextAcctType, tq.ContextPort, tq.ContextPrivLvl)
+	a.Next(c.Accounting).Handle(response, request)
 }

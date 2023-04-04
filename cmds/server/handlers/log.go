@@ -19,6 +19,5 @@ type loggerProvider interface {
 	Errorf(ctx context.Context, format string, args ...interface{})
 	Debugf(ctx context.Context, format string, args ...interface{})
 	Record(ctx context.Context, r map[string]string, obscure ...string)
-	// for stateful logging, set keys with values from fields within ctx
 	Set(ctx context.Context, fields map[string]string, keys ...tq.ContextKey) context.Context
 }

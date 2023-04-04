@@ -15,7 +15,7 @@ import (
 
 // NewAuthenticateASCII ...
 func NewAuthenticateASCII(l loggerProvider, c configProvider, username string) *AuthenticateASCII {
-	return &AuthenticateASCII{loggerProvider: l, configProvider: c, username: username}
+	return &AuthenticateASCII{loggerProvider: l, configProvider: c, username: username, recorder: newPacketLogger(l)}
 }
 
 // AuthenticateASCII is the main entry for ascii flows.  the ascii flows are quite complex compared to some of the
@@ -23,6 +23,7 @@ func NewAuthenticateASCII(l loggerProvider, c configProvider, username string) *
 // that it may be terminated by a magic bit at anytime (TAC_PLUS_CONTINUE_FLAG_ABORT)
 type AuthenticateASCII struct {
 	loggerProvider
+	recorder
 	configProvider
 	username string
 }
@@ -34,11 +35,12 @@ func (a *AuthenticateASCII) Handle(response tq.Response, request tq.Request) {
 		response.Reply(reply)
 		return
 	}
+	a.RecordCtx(&request, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextPort, tq.ContextPrivLvl)
 	if a.username == "" {
 		// client didn't send us a username to start with
 		authenASCIIHandleNeedUsername.Inc()
 		a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr))
-		response.Next(NewCtxLogger(a.loggerProvider, request, tq.HandlerFunc(a.getUsername)))
+		response.Next(NewResponseLogger(request.Context, a.loggerProvider, tq.HandlerFunc(a.getUsername)))
 		response.Reply(
 			tq.NewAuthenReply(
 				tq.SetAuthenReplyStatus(tq.AuthenStatusGetUser),
@@ -87,7 +89,8 @@ func (a *AuthenticateASCII) getUsername(response tq.Response, request tq.Request
 		}
 		a.username = string(body.UserMessage)
 	}
-	response.Next(NewCtxLogger(a.loggerProvider, request, tq.HandlerFunc(a.getPassword)))
+	a.RecordCtx(&request, tq.ContextUserMsg)
+	response.Next(NewResponseLogger(request.Context, a.loggerProvider, tq.HandlerFunc(a.getPassword)))
 	response.Reply(
 		tq.NewAuthenReply(
 			tq.SetAuthenReplyStatus(tq.AuthenStatusGetPass),
@@ -144,7 +147,7 @@ func (a *AuthenticateASCII) getPassword(response tq.Response, request tq.Request
 		)
 		return
 	}
-	c.Authenticate.Handle(response, request)
+	a.Next(c.Authenticate).Handle(response, request)
 }
 
 // AuthenticateContinueStop looks for flags in the client request to see if we should terminate.

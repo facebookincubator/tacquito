@@ -15,13 +15,14 @@ import (
 
 // NewAuthorizeRequest ...
 func NewAuthorizeRequest(l loggerProvider, c configProvider) *AuthorizeRequest {
-	return &AuthorizeRequest{loggerProvider: l, configProvider: c}
+	return &AuthorizeRequest{loggerProvider: l, configProvider: c, recorder: newPacketLogger(l)}
 }
 
 // AuthorizeRequest is the main entry point for incoming AuthorRequest packets
 type AuthorizeRequest struct {
 	loggerProvider
 	configProvider
+	recorder
 }
 
 // Handle ...
@@ -53,5 +54,6 @@ func (a *AuthorizeRequest) Handle(response tq.Response, request tq.Request) {
 		)
 		return
 	}
-	NewCtxLogger(a.loggerProvider, request, c.Authorizer).Handle(response, request)
+	a.RecordCtx(&request, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextPort, tq.ContextPrivLvl)
+	a.Next(c.Authorizer).Handle(response, request)
 }
