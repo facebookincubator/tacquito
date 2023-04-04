@@ -25,6 +25,9 @@ const ContextConnRemoteAddr ContextKey = "conn-remote-addr"
 // ContextUser is used to store the username within a session.
 const ContextUser ContextKey = "user"
 
+// ContextUserMsg ...
+const ContextUserMsg ContextKey = "user-msg"
+
 // ContextRemoteAddr ...
 const ContextRemoteAddr ContextKey = "rem-addr"
 

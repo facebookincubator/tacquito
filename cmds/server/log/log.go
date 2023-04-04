@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+
+	tq "github.com/facebookincubator/tacquito"
 )
 
 // New provides a basic logger if one is not provided
@@ -78,4 +80,14 @@ func (d Logger) Debugf(ctx context.Context, format string, args ...interface{}) 
 // Fatalf ...
 func (d Logger) Fatalf(ctx context.Context, format string, args ...interface{}) {
 	d.fatalLogger.Output(2, fmt.Sprintf(format, args...))
+}
+
+// Set will extract keys from the request, and save them to the
+// logger's context
+func (d Logger) Set(ctx context.Context, fields map[string]string, keys ...tq.ContextKey) context.Context {
+	// set fields here if needed
+	// for _, key := range keys {
+	// 	ctx = context.WithValue(ctx, key, fields[string(key)])
+	// }
+	return ctx
 }

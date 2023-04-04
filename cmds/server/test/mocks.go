@@ -31,6 +31,7 @@ type loggerProvider interface {
 	Debugf(ctx context.Context, format string, args ...interface{})
 	// Record provides a structed log interface for systems that need a record based format
 	Record(ctx context.Context, r map[string]string, obscure ...string)
+	Set(ctx context.Context, fields map[string]string, keys ...tq.ContextKey) context.Context
 }
 
 // Test ...
