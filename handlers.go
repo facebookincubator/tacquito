@@ -93,12 +93,6 @@ func (r *response) Context(ctx context.Context) {
 	r.ctx = ctx
 }
 
-func (r *response) PopWriter() {
-	if len(r.writers) > 0 {
-		r.writers = r.writers[:len(r.writers)-1]
-	}
-}
-
 // Response controls what we send back to the client.  Calls to Write should be considered final on the
 // packet back to the client.  You may not call Exchange after Write.
 type Response interface {
@@ -106,7 +100,6 @@ type Response interface {
 	Write(p *Packet) (int, error)
 	Next(next Handler)
 	RegisterWriter(Writer)
-	PopWriter()
 	// Context sets context of response to ctx
 	Context(ctx context.Context)
 }
