@@ -85,7 +85,7 @@ type writer struct {
 // after filtering on fields inside the packet
 // currently supported fields are rem-addr(remote-host), switchAddr(switch to which user is trying to login to)
 // and packet-Type (authenticate/authorise/accounting)
-func (w writer) Write(p []byte) (int, error) {
+func (w writer) Write(ctx context.Context, p []byte) (int, error) {
 	if w.Conn == nil {
 		spanHandleWriteError.Inc()
 		w.Errorf(w.ctx, "connection object attached to writer is invalid")
@@ -176,7 +176,7 @@ func (s *Span) Handle(response tq.Response, request tq.Request) {
 		callNextHandler()
 		return
 	}
-	w.Write(reqBytes)
+	w.Write(request.Context, reqBytes)
 	// Write responses
 	go func() {
 		for range request.Context.Done() {

@@ -27,14 +27,14 @@ type ResponseLogger struct {
 }
 
 // Write response fields to logger
-func (l *ResponseLogger) Write(p []byte) (int, error) {
+func (l *ResponseLogger) Write(ctx context.Context, p []byte) (int, error) {
 	packet := tq.NewPacket()
 	err := packet.UnmarshalBinary(p)
 	if err != nil {
 		return 0, err
 	}
-	request := tq.Request{Header: *packet.Header, Body: packet.Body[:], Context: l.ctx}
-	l.Record(l.ctx, request.Fields(tq.ContextConnRemoteAddr, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextAcctType, tq.ContextPrivLvl, tq.ContextPort))
+	request := tq.Request{Header: *packet.Header, Body: packet.Body[:], Context: ctx}
+	l.Record(ctx, request.Fields(tq.ContextConnRemoteAddr, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextAcctType, tq.ContextPrivLvl, tq.ContextPort))
 
 	return 0, nil
 }

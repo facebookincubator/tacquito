@@ -9,8 +9,12 @@ package tacquito
 
 import (
 	"context"
-	"io"
 )
+
+// Writer is an abstraction used for adding Writers to the response object
+type Writer interface {
+	Write(ctx context.Context, p []byte) (int, error)
+}
 
 // response implements the Response interface.  when testing handlers, provide your own
 // mock of this struct via the interface. crypt operations are not exposed for testing.
@@ -22,7 +26,7 @@ type response struct {
 	// header is the corresponding header that was used to create this response
 	header Header
 	// slice of writers to write back the response
-	writers []io.Writer
+	writers []Writer
 }
 
 // Reply will write the provided EncoderDecoder to the underlying net.Conn.  This method handles
@@ -60,7 +64,7 @@ func (r *response) Reply(v EncoderDecoder) (int, error) {
 	)
 	if pbytes, err := p.MarshalBinary(); err == nil {
 		for _, mw := range r.writers {
-			_, err := mw.Write(pbytes)
+			_, err := mw.Write(r.ctx, pbytes)
 			if err != nil {
 				r.Errorf(r.ctx, "unable to write to response writer; %v", err)
 			}
@@ -81,8 +85,12 @@ func (r *response) Next(next Handler) {
 	r.next = next
 }
 
-func (r *response) RegisterWriter(mw io.Writer) {
+func (r *response) RegisterWriter(mw Writer) {
 	r.writers = append(r.writers, mw)
+}
+
+func (r *response) Context(ctx context.Context) {
+	r.ctx = ctx
 }
 
 func (r *response) PopWriter() {
@@ -97,8 +105,10 @@ type Response interface {
 	Reply(v EncoderDecoder) (int, error)
 	Write(p *Packet) (int, error)
 	Next(next Handler)
-	RegisterWriter(io.Writer)
+	RegisterWriter(Writer)
 	PopWriter()
+	// Context sets context of response to ctx
+	Context(ctx context.Context)
 }
 
 // Request provides access to the config for this net.Conn and also the packet itself
