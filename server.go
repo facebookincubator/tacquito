@@ -96,33 +96,34 @@ func (s *Server) Serve(ctx context.Context, listener DeadlineListener) error {
 					}
 					// something else? fall through
 				}
-				s.Errorf(ctx, "%s", err)
+				s.Errorf(ctx, "server error in serving request: %s", err)
 				serveAcceptedError.Inc()
 				continue
-
 			}
-			timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-				ms := v * 1000 // make milliseconds
-				connectionDuration.Observe(ms)
-			}))
-			WithReqIDCtx := context.WithValue(ctx, ContextReqID, uuid.New().String())
-			secret, handler, err := s.Get(WithReqIDCtx, conn.RemoteAddr())
-			if err != nil || secret == nil || handler == nil {
-				s.Errorf(ctx, "ignoring request: %v", err)
-				conn.Close()
-				timer.ObserveDuration()
-				continue
-			}
-			serveAccepted.Inc()
 			s.Add(1)
-			go func() {
-				s.handle(ctx, newCrypter(secret, conn, s.proxy), handler)
-				s.Done()
-				serveAccepted.Dec()
-				timer.ObserveDuration()
-			}()
+			go s.serve(ctx, conn)
 		}
 	}
+}
+
+func (s *Server) serve(ctx context.Context, conn net.Conn) {
+	defer s.Done()
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		ms := v * 1000 // make milliseconds
+		connectionDuration.Observe(ms)
+	}))
+	defer timer.ObserveDuration()
+	WithReqIDCtx := context.WithValue(ctx, ContextReqID, uuid.New().String())
+	secret, handler, err := s.Get(WithReqIDCtx, conn.RemoteAddr())
+	if err != nil || secret == nil || handler == nil {
+		s.Errorf(ctx, "ignoring request: %v", err)
+		conn.Close()
+		timer.ObserveDuration()
+		return
+	}
+	serveAccepted.Inc()
+	s.handle(ctx, newCrypter(secret, conn, s.proxy), handler)
+	serveAccepted.Dec()
 }
 
 // handle will process connections on a net.Conn. This is meant to be executed in a goroutine
