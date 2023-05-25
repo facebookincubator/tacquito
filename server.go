@@ -173,7 +173,7 @@ func (s *Server) handle(ctx context.Context, c *crypter, h Handler) {
 			state.Handle(resp, req)
 			handlers.Dec()
 			if resp.next == nil {
-				s.Infof(ctx, "[%v] sessionID is complete", req.Header.SessionID)
+				s.Debugf(ctx, "[%v] sessionID is complete", req.Header.SessionID)
 				sessionProvider.delete(req.Header.SessionID)
 				continue
 			}
