@@ -441,3 +441,19 @@ func (t AcctRequestFlag) Validate(condition interface{}) error {
 func (t AcctRequestFlag) Len() int {
 	return 1
 }
+
+// AcctArg is the arguments describe the specifics of the accounting that is being requested.
+type AcctArg string
+
+// Validate characterics of type based on rfc and usage.
+func (t AcctArg) Validate(condition interface{}) error {
+	if !isAllASCII(string(t)) {
+		return fmt.Errorf("Arg is not all ascii, but it must be, [%v]", t)
+	}
+
+	if len(t) > 255 {
+		return fmt.Errorf("invalid arg length. valid range [0-255], found [%v]", len(t))
+	}
+
+	return nil
+}

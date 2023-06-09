@@ -122,7 +122,7 @@ func (a *AcctRequest) Validate() error {
 		}
 	}
 	for _, t := range a.Args {
-		if err := t.Validate(nil); err != nil {
+		if err := AcctArg(t).Validate(nil); err != nil {
 			return err
 		}
 	}

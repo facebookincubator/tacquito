@@ -87,6 +87,7 @@ func (t Arg) Validate(condition interface{}) error {
 	if !isAllASCII(string(t)) {
 		return fmt.Errorf("Arg is not all ascii, but it must be, [%v]", t)
 	}
+
 	if len(t) < 2 || len(t) > 255 {
 		return fmt.Errorf("invalid arg length. valid range [2-255], found [%v]", len(t))
 	}

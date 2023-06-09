@@ -16,6 +16,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var characters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func stringOfLength(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = characters[rand.Intn(len(characters))]
+	}
+	return string(b)
+}
+
 // TestReadBuffer inspects various error conditions that could cause readBuffer to panic
 // we don't want that in a server so lets make sure it doesn't panic, particulary index errors
 func TestReadBuffer(t *testing.T) {
@@ -136,16 +146,6 @@ func TestAuthenContinueMarshalUnmarshal(t *testing.T) {
 }
 
 func TestAuthorRequestMarshalUnmarshal(t *testing.T) {
-	characters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-	stringOfLength := func(n int) string {
-		b := make([]rune, n)
-		for i := range b {
-			b[i] = characters[rand.Intn(len(characters))]
-		}
-		return string(b)
-	}
-
 	v := NewAuthorRequest(
 		SetAuthorRequestMethod(AuthenMethodTacacsPlus),
 		SetAuthorRequestPrivLvl(PrivLvlRoot),
@@ -233,6 +233,34 @@ func TestAcctRequestMarshalUnmarshal(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(spew.Sdump(decoded))
 	assert.Equal(t, v, decoded)
+
+	// arg is 0 this should not err
+	v = NewAcctRequest(
+		SetAcctRequestFlag(f),
+		SetAcctRequestMethod(AuthenMethodTacacsPlus),
+		SetAcctRequestPrivLvl(PrivLvlRoot),
+		SetAcctRequestType(AuthenTypeASCII),
+		SetAcctRequestService(AuthenServiceLogin),
+		SetAcctRequestPort("4"),
+		SetAcctRequestRemAddr("async"),
+		SetAcctRequestArgs(Args{Arg(stringOfLength(0))}),
+	)
+	_, err = v.MarshalBinary()
+	assert.NoError(t, err)
+
+	// arg is too long > 255 it should err
+	v = NewAcctRequest(
+		SetAcctRequestFlag(f),
+		SetAcctRequestMethod(AuthenMethodTacacsPlus),
+		SetAcctRequestPrivLvl(PrivLvlRoot),
+		SetAcctRequestType(AuthenTypeASCII),
+		SetAcctRequestService(AuthenServiceLogin),
+		SetAcctRequestPort("4"),
+		SetAcctRequestRemAddr("async"),
+		SetAcctRequestArgs(Args{Arg(stringOfLength(256))}),
+	)
+	_, err = v.MarshalBinary()
+	assert.Error(t, err)
 }
 
 func TestAcctReplyMarshalUnmarshal(t *testing.T) {
