@@ -188,7 +188,10 @@ type Loader struct {
 
 // BlockUntilLoaded will block until we are warmed up with parsed config
 func (l Loader) BlockUntilLoaded() {
-	<-l.warm
+	select {
+	case <-l.ctx.Done():
+	case <-l.warm:
+	}
 }
 
 // Get implements tq.SecretProvider.  The underlying user types and associated configs
