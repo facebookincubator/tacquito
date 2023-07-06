@@ -114,6 +114,8 @@ func (s *Server) serve(ctx context.Context, conn net.Conn) {
 	}))
 	defer timer.ObserveDuration()
 	WithReqIDCtx := context.WithValue(ctx, ContextReqID, uuid.New().String())
+	// start a timer to measure loader duration
+	loaderStart := time.Now()
 	secret, handler, err := s.Get(WithReqIDCtx, conn.RemoteAddr())
 	if err != nil || secret == nil || handler == nil {
 		s.Errorf(ctx, "ignoring request: %v", err)
@@ -121,6 +123,7 @@ func (s *Server) serve(ctx context.Context, conn net.Conn) {
 		timer.ObserveDuration()
 		return
 	}
+	ctx = context.WithValue(ctx, ContextLoaderDuration, time.Since(loaderStart).Milliseconds())
 	serveAccepted.Inc()
 	s.handle(ctx, newCrypter(secret, conn, s.proxy), handler)
 	serveAccepted.Dec()
@@ -149,8 +152,9 @@ func (s *Server) handle(ctx context.Context, c *crypter, h Handler) {
 				}
 				return
 			}
-			// sessionid will be a child to the parent context
+			// store the remote ip for easy retrieval in logging
 			remoteAddrCtx := context.WithValue(ctx, ContextConnRemoteAddr, stripPort(c.RemoteAddr().String()))
+
 			// create our request
 			req := Request{
 				Header:  *packet.Header,

@@ -42,3 +42,14 @@ const ContextPrivLvl ContextKey = "priv-lvl"
 
 // ContextPort ...
 const ContextPort ContextKey = "port"
+
+/* durations
+these ctx keys are being stored for request specific tracking of
+expensive operations. We already have prometheus Summary metrics tracking
+some of timings of these operatings, but they don't expose the level of detail we need
+for performance tracking and client debugging
+*/
+
+// ContextLoaderDuration is total processing time taken by loader i.e how long
+// it takes for the loader to map an IP to a scope
+const ContextLoaderDuration ContextKey = "loader_duration_ms"
