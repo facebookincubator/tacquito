@@ -38,11 +38,11 @@ func (s *Start) Handle(response tq.Response, request tq.Request) {
 		NewAuthenticateStart(s.loggerProvider, s.configProvider).Handle(response, request)
 	case tq.Authorize:
 		startAuthorize.Inc()
-		s.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr))
+		s.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr))
 		NewAuthorizeRequest(s.loggerProvider, s.configProvider).Handle(response, request)
 	case tq.Accounting:
 		startAccounting.Inc()
-		s.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr))
+		s.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr))
 		NewAccountingRequest(s.loggerProvider, s.configProvider).Handle(response, request)
 	}
 }

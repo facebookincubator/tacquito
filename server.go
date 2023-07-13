@@ -143,7 +143,7 @@ func (s *Server) handle(ctx context.Context, c *crypter, h Handler) {
 			return
 		default:
 			if err := c.SetReadDeadline(time.Now().Add(15 * time.Second)); err != nil {
-				s.Errorf(ctx, "unable to set read deadline on connection %v", c.RemoteAddr().String())
+				s.Errorf(ctx, "unable to set read deadline on connection %v", c.RemoteAddr())
 			}
 			packet, err := c.read()
 			if err != nil {
@@ -152,14 +152,14 @@ func (s *Server) handle(ctx context.Context, c *crypter, h Handler) {
 				}
 				return
 			}
-			// store the remote ip for easy retrieval in logging
-			remoteAddrCtx := context.WithValue(ctx, ContextConnRemoteAddr, stripPort(c.RemoteAddr().String()))
-
+			// store basic connection parameters into ctx
+			ctxWithAddr := context.WithValue(ctx, ContextConnRemoteAddr, stripPort(c.RemoteAddr().String()))
+			ctxWithAddr = context.WithValue(ctxWithAddr, ContextConnLocalAddr, c.LocalAddr().String())
 			// create our request
 			req := Request{
 				Header:  *packet.Header,
 				Body:    packet.Body,
-				Context: remoteAddrCtx,
+				Context: ctxWithAddr,
 			}
 			// create the response
 			resp := &response{ctx: req.Context, crypter: c, loggerProvider: s.loggerProvider, header: req.Header}

@@ -31,7 +31,7 @@ type AuthenticateASCII struct {
 // Handle is the main entry for ascii flows.
 func (a *AuthenticateASCII) Handle(response tq.Response, request tq.Request) {
 	if reply := a.authenticateContinueStop(request); reply != nil {
-		a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr))
+		a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr))
 		response.Reply(reply)
 		return
 	}
@@ -39,7 +39,7 @@ func (a *AuthenticateASCII) Handle(response tq.Response, request tq.Request) {
 	if a.username == "" {
 		// client didn't send us a username to start with
 		authenASCIIHandleNeedUsername.Inc()
-		a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr))
+		a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr))
 		response.Next(NewResponseLogger(request.Context, a.loggerProvider, tq.HandlerFunc(a.getUsername)))
 		response.Reply(
 			tq.NewAuthenReply(
@@ -57,7 +57,7 @@ func (a *AuthenticateASCII) Handle(response tq.Response, request tq.Request) {
 func (a *AuthenticateASCII) getUsername(response tq.Response, request tq.Request) {
 	// user-msg may contain a password but if we land here, it technically should be a username
 	// this should be safe to log without obscure
-	defer a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr))
+	defer a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr))
 	if reply := a.authenticateContinueStop(request); reply != nil {
 		response.Reply(reply)
 		return
@@ -103,7 +103,7 @@ func (a *AuthenticateASCII) getUsername(response tq.Response, request tq.Request
 // getPassword collects a password
 func (a *AuthenticateASCII) getPassword(response tq.Response, request tq.Request) {
 	// user-msg will contain a password here, obscure it
-	defer a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr), "user-msg")
+	defer a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr), "user-msg")
 	if reply := a.authenticateContinueStop(request); reply != nil {
 		response.Reply(reply)
 		return

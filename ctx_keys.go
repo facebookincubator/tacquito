@@ -22,6 +22,9 @@ const ContextSessionID ContextKey = "session-id"
 // in any sub contexts that share the underlying net.conn
 const ContextConnRemoteAddr ContextKey = "conn-remote-addr"
 
+// ContextConnLocalAddr is the tacquito server address
+const ContextConnLocalAddr ContextKey = "conn-local-addr"
+
 // ContextUser is used to store the username within a session.
 const ContextUser ContextKey = "user"
 

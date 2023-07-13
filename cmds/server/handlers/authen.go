@@ -65,7 +65,7 @@ func (a *AuthenticateStart) Handle(response tq.Response, request tq.Request) {
 	}
 	// we don't know what this packet is, so we log everything in it. this could log passwords but w/o knowing what this
 	// packet was, we can't effectively omit fields, so we guess.  user-msg may contain a password.
-	a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr), "user-msg")
+	a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr), "user-msg")
 	authenStartHandleUnexpectedPacket.Inc()
 	authenStartHandleError.Inc()
 	response.Reply(

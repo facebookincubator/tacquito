@@ -30,7 +30,7 @@ type AuthenticatePAP struct {
 func (a *AuthenticatePAP) Handle(response tq.Response, request tq.Request) {
 	// all control flows use the same message type, we can defer a single log
 	// call as a result. data may contain a password
-	a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr), "data")
+	a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr), "data")
 
 	authenStartHandlePAP.Inc()
 	var body tq.AuthenStart
