@@ -10,12 +10,12 @@ package tacquito
 import (
 	"context"
 	"errors"
-	"github.com/google/uuid"
-	"github.com/prometheus/client_golang/prometheus"
 	"io"
 	"net"
-	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Option is used to set optional behaviors on the server. Required behaviors are set
@@ -153,8 +153,9 @@ func (s *Server) handle(ctx context.Context, c *crypter, h Handler) {
 				return
 			}
 			// store basic connection parameters into ctx
-			ctxWithAddr := context.WithValue(ctx, ContextConnRemoteAddr, stripPort(c.RemoteAddr().String()))
+			ctxWithAddr := context.WithValue(ctx, ContextConnRemoteAddr, strip(c.RemoteAddr().String()))
 			ctxWithAddr = context.WithValue(ctxWithAddr, ContextConnLocalAddr, c.LocalAddr().String())
+
 			// create our request
 			req := Request{
 				Header:  *packet.Header,
@@ -186,11 +187,13 @@ func (s *Server) handle(ctx context.Context, c *crypter, h Handler) {
 	}
 }
 
-// stripPort removes port info from v4 or v6 ip strings
-func stripPort(ip string) string {
-	i := strings.LastIndex(ip, ":")
-	if i != -1 {
-		return ip[:i]
+// strip removes port and [] from an IP address
+// on a best effort basis. In case of any error, the
+// original input is returned
+func strip(ip string) string {
+	host, _, err := net.SplitHostPort(ip)
+	if err != nil {
+		return ip
 	}
-	return ip
+	return host
 }
