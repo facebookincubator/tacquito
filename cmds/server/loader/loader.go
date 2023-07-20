@@ -239,22 +239,24 @@ func (l *Loader) updates() {
 			// notify that we are warmed, but one time only
 			warm.Do(func() { close(l.warm) })
 		case q := <-l.query:
-			// prefixFilter will log to prom counters and also act as a quick fail for prefixes that do not pass
-			// muster.  this pevents unnecessary load on scanning SecretProviders
-			if prefixDeny.deny(q.remote) {
-				q.cb <- secretProvider{err: fmt.Errorf("remote address connection not allowed by prefixDeny filter [%v]", q.remote.String())}
+			go func() {
+				// prefixFilter will log to prom counters and also act as a quick fail for prefixes that do not pass
+				// muster.  this pevents unnecessary load on scanning SecretProviders
+				if prefixDeny.deny(q.remote) {
+					q.cb <- secretProvider{err: fmt.Errorf("remote address connection not allowed by prefixDeny filter [%v]", q.remote.String())}
+					close(q.cb)
+					return
+				}
+				if !prefixAllow.allow(q.remote) {
+					q.cb <- secretProvider{err: fmt.Errorf("remote address connection not allowed by prefixAllow filter [%v]", q.remote.String())}
+					close(q.cb)
+					return
+				}
+				secret, handler, err := l.get(q.ctx, providers, q.remote)
+				q.cb <- secretProvider{secret: secret, handler: handler, err: err}
 				close(q.cb)
-				break
-			}
-			if !prefixAllow.allow(q.remote) {
-				q.cb <- secretProvider{err: fmt.Errorf("remote address connection not allowed by prefixAllow filter [%v]", q.remote.String())}
-				close(q.cb)
-				break
-			}
-			secret, handler, err := l.get(q.ctx, providers, q.remote)
-			q.cb <- secretProvider{secret: secret, handler: handler, err: err}
-			close(q.cb)
-			buildGet.Inc()
+				buildGet.Inc()
+			}()
 		}
 	}
 }
