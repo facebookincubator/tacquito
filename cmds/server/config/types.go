@@ -91,6 +91,7 @@ type Group struct {
 	Commands      []Command      `yaml:"commands,omitempty" json:"commands,omitempty"`
 	Authenticator *Authenticator `yaml:"authenticator,omitempty" json:"authenticator,omitempty"`
 	Accounter     *Accounter     `yaml:"accounter,omitempty" json:"accounter,omitempty"`
+	Comment       string         `yaml:"comment,omitempty" json:"comment,omitempty"`
 }
 
 // Service represents a concept that looks for tacplus attributes, matches them and sets/replaces
@@ -137,6 +138,7 @@ type Service struct {
 	Match     []Value `yaml:"match,omitempty" json:"match,omitempty"`
 	SetValues []Value `yaml:"set_values,omitempty" json:"set_values,omitempty"`
 	Optional  bool    `yaml:"is_optional" json:"is_optional"`
+	Comment   string  `yaml:"comment,omitempty" json:"comment,omitempty"`
 }
 
 // TrimSpace removes all leading and trailing white space removed, as defined by Unicode.
@@ -149,6 +151,7 @@ type Value struct {
 	Name     string   `yaml:"name" json:"name"`
 	Values   []string `yaml:"values,omitempty" json:"values,omitempty"`
 	Optional bool     `yaml:"is_optional" json:"is_optional"`
+	Comment  string   `yaml:"comment,omitempty" json:"comment,omitempty"`
 }
 
 // TrimSpace removes all leading and trailing white space removed, as defined by Unicode.
@@ -189,9 +192,10 @@ func (v *Value) String() string {
 // 	permit tail.*
 // }
 type Command struct {
-	Name   string   `yaml:"name" json:"name"`
-	Match  []string `yaml:"match,omitempty" json:"match,omitempty"`
-	Action Action   `yaml:"action" json:"action"`
+	Name    string   `yaml:"name" json:"name"`
+	Match   []string `yaml:"match,omitempty" json:"match,omitempty"`
+	Action  Action   `yaml:"action" json:"action"`
+	Comment string   `yaml:"comment,omitempty" json:"comment,omitempty"`
 }
 
 // TrimSpace removes all leading and trailing white space removed, as defined by Unicode.
