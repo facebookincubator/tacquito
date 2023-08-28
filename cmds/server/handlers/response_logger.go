@@ -21,8 +21,8 @@ func NewResponseLogger(ctx context.Context, l loggerProvider, next tq.Handler) *
 
 // ResponseLogger is a middleware handler that logs responses from the server
 type ResponseLogger struct {
+	ctx context.Context
 	loggerProvider
-	ctx  context.Context
 	next tq.Handler
 }
 
@@ -41,6 +41,7 @@ func (l *ResponseLogger) Write(ctx context.Context, p []byte) (int, error) {
 
 // Handle implements a middleware logger for next
 func (l *ResponseLogger) Handle(response tq.Response, request tq.Request) {
+	response.Context(l.ctx)
 	response.RegisterWriter(l)
 	l.next.Handle(response, request)
 }
@@ -49,30 +50,28 @@ func (l *ResponseLogger) Handle(response tq.Response, request tq.Request) {
 // it lets us abstract an object which can be used to store persistent data
 // also used to intercept the handler state machine. the interface would help
 // to make this dependency be injectable from main in the future
-type recorder interface {
+type recorderWriter interface {
 	RecordCtx(request *tq.Request, keys ...tq.ContextKey)
-	Next(tq.Handler) tq.Handler
+	Context() context.Context
+	Write(ctx context.Context, p []byte) (int, error)
 }
 
 // ctxLogger is a middleware handler that logs responses from the server
 type ctxLogger struct {
 	loggerProvider
-	ctx  context.Context
-	next tq.Handler
+	tq.Writer
+	ctx context.Context
 }
 
 // newPacketLogger is a logger scoped to a AAA handler's lifetime
 func newPacketLogger(l loggerProvider) *ctxLogger {
-	return &ctxLogger{loggerProvider: l}
+	return &ctxLogger{loggerProvider: l, Writer: &ResponseLogger{loggerProvider: l}}
 }
 
-// Next takes in a tq.Handler and returns another one
-// This method allows ctxLogger to act as a middleware handler
-// by intercepting a call to the next handler, performs operations
-// such as overwriting the response ctx, and call the next handler
-func (cl *ctxLogger) Next(next tq.Handler) tq.Handler {
-	cl.next = next
-	return cl
+// Context returns the ctxLogger's stored context
+// This context could be nil if this method is called before RecordCtx
+func (cl *ctxLogger) Context() context.Context {
+	return cl.ctx
 }
 
 // RecordCtx receives a request object, and a set of context keys
@@ -83,13 +82,4 @@ func (cl *ctxLogger) RecordCtx(request *tq.Request, keys ...tq.ContextKey) {
 		cl.ctx = request.Context
 	}
 	cl.ctx = cl.Set(cl.ctx, request.Fields(), keys...)
-}
-
-// Handle is a middleware handler function, for contextLogging.
-// It overwrites the response's context with the ctxLogger's context,
-// and calls the Handler specified with Next
-// you MUST call Next before calling Handle
-func (cl *ctxLogger) Handle(response tq.Response, request tq.Request) {
-	response.Context(cl.ctx)
-	cl.next.Handle(response, request)
 }

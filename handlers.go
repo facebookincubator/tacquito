@@ -93,10 +93,25 @@ func (r *response) Context(ctx context.Context) {
 	r.ctx = ctx
 }
 
+// ReplyWithContext can be used to reply to requests that cause a server error or failure in processing of response.
+// This method includes an additional variadic argument `writers` that can be used to write the response `v` to
+// other sinks (eg logging backends)
+// This method also overwrites the response's context with the supplied `ctx`
+func (r *response) ReplyWithContext(ctx context.Context, v EncoderDecoder, writers ...Writer) (int, error) {
+	r.Context(ctx)
+	for _, w := range writers {
+		if w != nil {
+			r.RegisterWriter(w)
+		}
+	}
+	return r.Reply(v)
+}
+
 // Response controls what we send back to the client.  Calls to Write should be considered final on the
 // packet back to the client.  You may not call Exchange after Write.
 type Response interface {
 	Reply(v EncoderDecoder) (int, error)
+	ReplyWithContext(ctx context.Context, v EncoderDecoder, writers ...Writer) (int, error)
 	Write(p *Packet) (int, error)
 	Next(next Handler)
 	RegisterWriter(Writer)

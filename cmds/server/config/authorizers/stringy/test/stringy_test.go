@@ -50,6 +50,9 @@ func (r *mockedResponse) Reply(v tq.EncoderDecoder) (int, error) {
 	r.got = got
 	return 0, nil
 }
+func (r *mockedResponse) ReplyWithContext(ctx context.Context, v tq.EncoderDecoder, writer ...tq.Writer) (int, error) {
+	return r.Reply(v)
+}
 
 func (r *mockedResponse) Write(p *tq.Packet) (int, error) { return 0, nil }
 

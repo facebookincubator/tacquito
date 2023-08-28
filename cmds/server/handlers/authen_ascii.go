@@ -15,7 +15,7 @@ import (
 
 // NewAuthenticateASCII ...
 func NewAuthenticateASCII(l loggerProvider, c configProvider, username string) *AuthenticateASCII {
-	return &AuthenticateASCII{loggerProvider: l, configProvider: c, username: username, recorder: newPacketLogger(l)}
+	return &AuthenticateASCII{loggerProvider: l, configProvider: c, username: username, recorderWriter: newPacketLogger(l)}
 }
 
 // AuthenticateASCII is the main entry for ascii flows.  the ascii flows are quite complex compared to some of the
@@ -23,7 +23,7 @@ func NewAuthenticateASCII(l loggerProvider, c configProvider, username string) *
 // that it may be terminated by a magic bit at anytime (TAC_PLUS_CONTINUE_FLAG_ABORT)
 type AuthenticateASCII struct {
 	loggerProvider
-	recorder
+	recorderWriter
 	configProvider
 	username string
 }
@@ -31,16 +31,14 @@ type AuthenticateASCII struct {
 // Handle is the main entry for ascii flows.
 func (a *AuthenticateASCII) Handle(response tq.Response, request tq.Request) {
 	if reply := a.authenticateContinueStop(request); reply != nil {
-		a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr))
-		response.Reply(reply)
+		response.ReplyWithContext(request.Context, reply, a.recorderWriter)
 		return
 	}
 	a.RecordCtx(&request, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextPort, tq.ContextPrivLvl)
 	if a.username == "" {
 		// client didn't send us a username to start with
 		authenASCIIHandleNeedUsername.Inc()
-		a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr))
-		response.Next(NewResponseLogger(request.Context, a.loggerProvider, tq.HandlerFunc(a.getUsername)))
+		response.Next(tq.HandlerFunc(a.getUsername))
 		response.Reply(
 			tq.NewAuthenReply(
 				tq.SetAuthenReplyStatus(tq.AuthenStatusGetUser),
@@ -57,9 +55,8 @@ func (a *AuthenticateASCII) Handle(response tq.Response, request tq.Request) {
 func (a *AuthenticateASCII) getUsername(response tq.Response, request tq.Request) {
 	// user-msg may contain a password but if we land here, it technically should be a username
 	// this should be safe to log without obscure
-	defer a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr))
 	if reply := a.authenticateContinueStop(request); reply != nil {
-		response.Reply(reply)
+		response.ReplyWithContext(request.Context, reply, a.recorderWriter)
 		return
 	}
 	if a.username == "" {
@@ -67,11 +64,13 @@ func (a *AuthenticateASCII) getUsername(response tq.Response, request tq.Request
 		if err := tq.Unmarshal(request.Body, &body); err != nil {
 			authenASCIIGetUsernameUnexpectedPacket.Inc()
 			authenASCIIGetUsernameAuthenError.Inc()
-			response.Reply(
+			response.ReplyWithContext(
+				a.Context(),
 				tq.NewAuthenReply(
 					tq.SetAuthenReplyStatus(tq.AuthenStatusError),
 					tq.SetAuthenReplyServerMsg("expected authenticate continue packet for AuthenStatusGetUser"),
 				),
+				a.recorderWriter,
 			)
 			return
 		}
@@ -79,18 +78,20 @@ func (a *AuthenticateASCII) getUsername(response tq.Response, request tq.Request
 		if len(body.UserMessage) == 0 {
 			authenASCIIGetUsernameAuthenError.Inc()
 			authenASCIIGetUsernameMissingUsername.Inc()
-			response.Reply(
+			response.ReplyWithContext(
+				a.Context(),
 				tq.NewAuthenReply(
 					tq.SetAuthenReplyStatus(tq.AuthenStatusError),
 					tq.SetAuthenReplyServerMsg("missing UserMessage, containing the username"),
 				),
+				a.recorderWriter,
 			)
 			return
 		}
 		a.username = string(body.UserMessage)
 	}
 	a.RecordCtx(&request, tq.ContextUserMsg)
-	response.Next(NewResponseLogger(request.Context, a.loggerProvider, tq.HandlerFunc(a.getPassword)))
+	response.Next(tq.HandlerFunc(a.getPassword))
 	response.Reply(
 		tq.NewAuthenReply(
 			tq.SetAuthenReplyStatus(tq.AuthenStatusGetPass),
@@ -102,21 +103,22 @@ func (a *AuthenticateASCII) getUsername(response tq.Response, request tq.Request
 
 // getPassword collects a password
 func (a *AuthenticateASCII) getPassword(response tq.Response, request tq.Request) {
-	// user-msg will contain a password here, obscure it
-	defer a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr), "user-msg")
+	// user-msg will contain a password here, obscure it if logging
 	if reply := a.authenticateContinueStop(request); reply != nil {
-		response.Reply(reply)
+		response.ReplyWithContext(request.Context, reply, a.recorderWriter)
 		return
 	}
 	var body tq.AuthenContinue
 	if err := tq.Unmarshal(request.Body, &body); err != nil {
 		authenASCIIGetPasswordUnexpectedPacket.Inc()
 		authenASCIIGetPasswordAuthenError.Inc()
-		response.Reply(
+		response.ReplyWithContext(
+			request.Context,
 			tq.NewAuthenReply(
 				tq.SetAuthenReplyStatus(tq.AuthenStatusError),
 				tq.SetAuthenReplyServerMsg("expected authenticate continue packet for AuthenStatusGetPass"),
 			),
+			a.recorderWriter,
 		)
 		return
 	}
@@ -127,27 +129,32 @@ func (a *AuthenticateASCII) getPassword(response tq.Response, request tq.Request
 		// send a message that doesn't say if the username or password was bad. we do this
 		// so as not to signal if the username or the password was bad. no clues as to how
 		// to attack this service more effectively.
-		response.Reply(
+		response.ReplyWithContext(
+			a.Context(),
 			tq.NewAuthenReply(
 				tq.SetAuthenReplyStatus(tq.AuthenStatusError),
 				tq.SetAuthenReplyServerMsg("unknown username or password"),
 			),
+			a.recorderWriter,
 		)
 		return
 	}
+
 	c := a.GetUser(a.username)
 	if c == nil {
 		a.Debugf(request.Context, "[%v] user [%v] does not have an authenticator associated", request.Header.SessionID, a.username)
 		authenASCIIGetPasswordAuthenFail.Inc()
-		response.Reply(
+		response.ReplyWithContext(
+			a.Context(),
 			tq.NewAuthenReply(
 				tq.SetAuthenReplyStatus(tq.AuthenStatusFail),
 				tq.SetAuthenReplyServerMsg(fmt.Sprintf("authentication denied [%s]", a.username)),
 			),
+			a.recorderWriter,
 		)
 		return
 	}
-	a.Next(c.Authenticate).Handle(response, request)
+	NewResponseLogger(a.Context(), a.loggerProvider, c.Authenticate).Handle(response, request)
 }
 
 // AuthenticateContinueStop looks for flags in the client request to see if we should terminate.

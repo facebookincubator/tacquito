@@ -15,14 +15,14 @@ import (
 
 // NewAccountingRequest ...
 func NewAccountingRequest(l loggerProvider, c configProvider) *AccountingRequest {
-	return &AccountingRequest{loggerProvider: l, configProvider: c, recorder: newPacketLogger(l)}
+	return &AccountingRequest{loggerProvider: l, configProvider: c, recorderWriter: newPacketLogger(l)}
 }
 
 // AccountingRequest is the main entry point for incoming AcctRequest packets
 type AccountingRequest struct {
 	loggerProvider
 	configProvider
-	recorder
+	recorderWriter
 }
 
 // Handle ...
@@ -32,29 +32,34 @@ func (a *AccountingRequest) Handle(response tq.Response, request tq.Request) {
 		a.Errorf(request.Context, "unable to unmarshal accounting packet : %v", err)
 		accountingHandleUnexpectedPacket.Inc()
 		accountingHandleError.Inc()
-		response.Reply(
+		response.ReplyWithContext(
+			request.Context,
 			tq.NewAcctReply(
 				tq.SetAcctReplyStatus(tq.AcctReplyStatusError),
 				tq.SetAcctReplyServerMsg("expected accounting request packet"),
 			),
+			a.recorderWriter,
 		)
 		return
 	}
 
+	a.RecordCtx(&request, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextAcctType, tq.ContextPort, tq.ContextPrivLvl)
 	// TODO implement a fallback for cases where a username may not be present.
 	c := a.GetUser(string(body.User))
 	if c == nil {
 		a.Debugf(request.Context, "[%v] user [%v] does not have an accounter associated", request.Header.SessionID, body.User)
 		accountingHandleAccounterNil.Inc()
-		response.Reply(
+		response.ReplyWithContext(
+			a.Context(),
 			tq.NewAcctReply(
 				tq.SetAcctReplyStatus(tq.AcctReplyStatusError),
 				// ensure user field is present in accounting packet, it could cause this.
 				tq.SetAcctReplyServerMsg(fmt.Sprintf("failed to lookup user [%s] for accounting login", string(body.User))),
 			),
+			a.recorderWriter,
 		)
 		return
 	}
-	a.RecordCtx(&request, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextAcctType, tq.ContextPort, tq.ContextPrivLvl)
-	a.Next(c.Accounting).Handle(response, request)
+
+	NewResponseLogger(a.Context(), a.loggerProvider, c.Accounting).Handle(response, request)
 }

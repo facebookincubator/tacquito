@@ -15,33 +15,31 @@ import (
 
 // NewAuthenticatePAP creates a scoped handler for PAP authentication exchanges
 func NewAuthenticatePAP(l loggerProvider, c configProvider) *AuthenticatePAP {
-	return &AuthenticatePAP{loggerProvider: l, configProvider: c, recorder: newPacketLogger(l)}
+	return &AuthenticatePAP{loggerProvider: l, configProvider: c, recorderWriter: newPacketLogger(l)}
 }
 
 // AuthenticatePAP is the main entry for pap authenticate exchanges
 type AuthenticatePAP struct {
 	loggerProvider
 	configProvider
-	recorder
+	recorderWriter
 	username string
 }
 
 // Handle requires that the username and password be present in a AuthenStart packet.
 func (a *AuthenticatePAP) Handle(response tq.Response, request tq.Request) {
-	// all control flows use the same message type, we can defer a single log
-	// call as a result. data may contain a password
-	a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr), "data")
-
 	authenStartHandlePAP.Inc()
 	var body tq.AuthenStart
 	if err := tq.Unmarshal(request.Body, &body); err != nil {
 		authenPAPHandleUnexpectedPacket.Inc()
 		authenASCIIHandleAuthenError.Inc()
-		response.Reply(
+		response.ReplyWithContext(
+			request.Context,
 			tq.NewAuthenReply(
 				tq.SetAuthenReplyStatus(tq.AuthenStatusError),
 				tq.SetAuthenReplyServerMsg("unable to decode authenticate start packet"),
 			),
+			a.recorderWriter,
 		)
 		return
 	}
@@ -50,24 +48,29 @@ func (a *AuthenticatePAP) Handle(response tq.Response, request tq.Request) {
 		a.Debugf(request.Context, "[%v] [%v] username is missing for rem-addr: [%v]", request.Header.SessionID, body.RemAddr)
 		authenPAPHandleAuthenError.Inc()
 		authenPAPHandleMissingUsername.Inc()
-		response.Reply(
+		response.ReplyWithContext(
+			request.Context,
 			tq.NewAuthenReply(
 				tq.SetAuthenReplyStatus(tq.AuthenStatusError),
 				tq.SetAuthenReplyServerMsg("missing username"),
 			),
+			a.recorderWriter,
 		)
 		return
 	}
+	a.RecordCtx(&request, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextPort, tq.ContextPrivLvl)
 	// missing password
 	if len(body.Data) == 0 {
 		a.Debugf(request.Context, "[%v] [%v] username [%v] is missing a password for rem-addr: [%v]", request.Header.SessionID, body.User, body.RemAddr)
 		authenPAPHandleMissingPassword.Inc()
 		authenPAPHandleAuthenError.Inc()
-		response.Reply(
+		response.ReplyWithContext(
+			a.Context(),
 			tq.NewAuthenReply(
 				tq.SetAuthenReplyStatus(tq.AuthenStatusError),
 				tq.SetAuthenReplyServerMsg("missing password"),
 			),
+			a.recorderWriter,
 		)
 		return
 	}
@@ -76,14 +79,15 @@ func (a *AuthenticatePAP) Handle(response tq.Response, request tq.Request) {
 		a.Debugf(request.Context, "[%v] user [%v] does not have an authenticator associated", request.Header.SessionID, body.User)
 		authenPAPHandleAuthenFail.Inc()
 		authenPAPHandleAuthenticatorNil.Inc()
-		response.Reply(
+		response.ReplyWithContext(
+			a.Context(),
 			tq.NewAuthenReply(
 				tq.SetAuthenReplyStatus(tq.AuthenStatusFail),
 				tq.SetAuthenReplyServerMsg(fmt.Sprintf("authentication denied [%s]", string(body.User))),
 			),
+			a.recorderWriter,
 		)
 		return
 	}
-	a.RecordCtx(&request, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextPort, tq.ContextPrivLvl)
-	a.Next(c.Authenticate).Handle(response, request)
+	NewResponseLogger(a.Context(), a.loggerProvider, c.Authenticate).Handle(response, request)
 }

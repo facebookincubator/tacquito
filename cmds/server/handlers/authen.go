@@ -15,13 +15,14 @@ import (
 
 // NewAuthenticateStart ...
 func NewAuthenticateStart(l loggerProvider, c configProvider) *AuthenticateStart {
-	return &AuthenticateStart{loggerProvider: l, configProvider: c}
+	return &AuthenticateStart{loggerProvider: l, configProvider: c, recorderWriter: newPacketLogger(l)}
 }
 
 // AuthenticateStart is the main entry point for incoming authenstart packets
 type AuthenticateStart struct {
 	loggerProvider
 	configProvider
+	recorderWriter
 }
 
 // authenActionStart is a function map that determines which authenticate handler to call given
@@ -39,14 +40,17 @@ func (a *AuthenticateStart) Handle(response tq.Response, request tq.Request) {
 	if err := tq.Unmarshal(request.Body, &body); err != nil {
 		authenStartHandleUnexpectedPacket.Inc()
 		authenStartHandleError.Inc()
-		response.Reply(
+		response.ReplyWithContext(
+			request.Context,
 			tq.NewAuthenReply(
 				tq.SetAuthenReplyStatus(tq.AuthenStatusError),
 				tq.SetAuthenReplyServerMsg(fmt.Sprintf("expected authenticate start packet for sessionID [%v]", request.Header.SessionID)),
 			),
+			a.recorderWriter,
 		)
 		return
 	}
+
 	authenRouter := map[authenActionStart]tq.Handler{
 		// 5.4.2.6.  Enable Requests
 		{action: tq.AuthenActionLogin, service: tq.AuthenServiceEnable, minorVersion: tq.MinorVersionOne}: NewAuthenticateASCII(a.loggerProvider, a.configProvider, string(body.User)),
@@ -68,10 +72,12 @@ func (a *AuthenticateStart) Handle(response tq.Response, request tq.Request) {
 	a.Record(request.Context, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr), "user-msg")
 	authenStartHandleUnexpectedPacket.Inc()
 	authenStartHandleError.Inc()
-	response.Reply(
+	response.ReplyWithContext(
+		request.Context,
 		tq.NewAuthenReply(
 			tq.SetAuthenReplyStatus(tq.AuthenStatusError),
 			tq.SetAuthenReplyServerMsg("unknown authenticate start packet type"),
 		),
+		a.recorderWriter,
 	)
 }
