@@ -109,7 +109,7 @@ func newASCIIAuthenSequence(password string) []asciiSequence {
 			),
 			tq.SetPacketBodyUnsafe(
 				tq.NewAuthenContinue(
-					tq.SetAuthenContinueUserMessage(tq.AuthenUserMessage(*username)),
+					tq.SetAuthenContinueUserMessage(tq.AuthenUserMessage(password)),
 				),
 			),
 		),
