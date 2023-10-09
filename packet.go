@@ -123,6 +123,9 @@ func (p *Packet) UnmarshalBinary(v []byte) error {
 	// Unmarshal failure will lead to the connection being closed
 	var err error
 	var h Header
+	if len(v) < MaxHeaderLength {
+		return fmt.Errorf("data length [%v] is smaller than expected header length [%v]", len(v), MaxHeaderLength)
+	}
 	err = Unmarshal(v[:MaxHeaderLength], &h)
 	if err != nil {
 		return fmt.Errorf("failed header unmarshal: [%w]", err)

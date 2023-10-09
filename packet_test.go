@@ -303,7 +303,17 @@ func TestPacketMarshalUnmarshalTooLarge(t *testing.T) {
 	_, err = p.MarshalBinary()
 	assert.Error(t, err)
 
-	// won't unmarhsal
+	// won't unmarshal
 	err = p.UnmarshalBinary(buf)
+	assert.Error(t, err)
+}
+
+func TestPacketMarshalUnmarshalTooSmall(t *testing.T) {
+	p := NewPacket()
+	var err error
+	err = p.UnmarshalBinary([]byte("000"))
+	assert.Error(t, err)
+
+	_, err = p.MarshalBinary()
 	assert.Error(t, err)
 }
