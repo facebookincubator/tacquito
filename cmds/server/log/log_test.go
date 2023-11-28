@@ -42,7 +42,7 @@ func TestLog0Allocation(t *testing.T) {
 			fn:   BenchmarkLog10,
 			expected: func(name string, r testing.BenchmarkResult) {
 				t.Log(spew.Sdump(r))
-				expectedAllocs := 3
+				expectedAllocs := 1
 				actual := r.AllocsPerOp()
 				assert.EqualValues(t, expectedAllocs, actual, fmt.Sprintf("%s allocations were not nominal; wanted %v got %v", name, expectedAllocs, actual))
 			},
@@ -52,7 +52,7 @@ func TestLog0Allocation(t *testing.T) {
 			fn:   BenchmarkLog10Variadic,
 			expected: func(name string, r testing.BenchmarkResult) {
 				t.Log(spew.Sdump(r))
-				expectedAllocs := 3
+				expectedAllocs := 1
 				actual := r.AllocsPerOp()
 				assert.EqualValues(t, expectedAllocs, actual, fmt.Sprintf("%s allocations were not nominal; wanted %v got %v", name, expectedAllocs, actual))
 			},
