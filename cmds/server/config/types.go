@@ -97,42 +97,44 @@ type Group struct {
 // Service represents a concept that looks for tacplus attributes, matches them and sets/replaces
 // client provided attribute pairs.  Example:
 //
-// Service{
-// 	Name: "junos-exec",
-// 	SetValues: []Value{
-// 		{Name: "allow-commands", Values: []string{"^configure (private|exclusive)$"},
-// 		{Name: "deny-commands", Values: []string{"(^configure$)|(^configure (batch|dynamic)$)}",
-// 	},
-// }
+//	Service{
+//		Name: "junos-exec",
+//		SetValues: []Value{
+//			{Name: "allow-commands", Values: []string{"^configure (private|exclusive)$"},
+//			{Name: "deny-commands", Values: []string{"(^configure$)|(^configure (batch|dynamic)$)}",
+//		},
+//	}
 //
 // Is the same as the tacplus config would express it:
 //
-// service = junos-exec {
-// 	local-user-name = netops
-// 	allow-commands = "^configure (private|exclusive)$"
-// 	deny-commands = "(^configure$)|(^configure (batch|dynamic)$)"
-// }
+//	service = junos-exec {
+//		local-user-name = netops
+//		allow-commands = "^configure (private|exclusive)$"
+//		deny-commands = "(^configure$)|(^configure (batch|dynamic)$)"
+//	}
 //
 // Another example of matching and setting attribute values pairs:
 //
-// Service{
-// 	Name: "ppp",
-//  Match: []Value{
-//    {NameL: "protocol", Values: []string{"ip"},
-// },
-// 	SetValues: []Value{
-// 		{Name: "F5-LTM-User-Console", Values: []string{"1"}},
-// 		{Name: "F5-LTM-User-Partition": Values []string{"all"}},
-// 	},
-// }
+//	Service{
+//		Name: "ppp",
+//	 Match: []Value{
+//	   {NameL: "protocol", Values: []string{"ip"},
+//	},
+//
+//		SetValues: []Value{
+//			{Name: "F5-LTM-User-Console", Values: []string{"1"}},
+//			{Name: "F5-LTM-User-Partition": Values []string{"all"}},
+//		},
+//	}
+//
 // but in tacplus world as:
 //
-// service = ppp protocol = ip {
-// 	F5-LTM-User-Info-1 = netops
-// 	F5-LTM-User-Console = 1
-// 	F5-LTM-User-Role = 0
-// 	F5-LTM-User-Partition = All
-// }
+//	service = ppp protocol = ip {
+//		F5-LTM-User-Info-1 = netops
+//		F5-LTM-User-Console = 1
+//		F5-LTM-User-Role = 0
+//		F5-LTM-User-Partition = All
+//	}
 type Service struct {
 	Name      string  `yaml:"name" json:"name"`
 	Match     []Value `yaml:"match,omitempty" json:"match,omitempty"`
@@ -176,21 +178,21 @@ func (v *Value) String() string {
 // Command represents a command and args/pattern to authorize a user's actions
 // Example:
 //
-// Command{
-// 	Name:"|",
-// 	Match: []string{
-// 		"grep.*",
-// 		"tail.*",
-// 	},
-// 	Action: Permit,
-// }
+//	Command{
+//		Name:"|",
+//		Match: []string{
+//			"grep.*",
+//			"tail.*",
+//		},
+//		Action: Permit,
+//	}
 //
 // Is the same as the tacplus config would express it:
 //
-// cmd = | {
-// 	permit grep.*
-// 	permit tail.*
-// }
+//	cmd = | {
+//		permit grep.*
+//		permit tail.*
+//	}
 type Command struct {
 	Name    string   `yaml:"name" json:"name"`
 	Match   []string `yaml:"match,omitempty" json:"match,omitempty"`

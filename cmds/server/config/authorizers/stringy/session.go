@@ -29,16 +29,16 @@ func NewSessionBasedAuthorizer(ctx context.Context, l loggerProvider, b tq.Autho
 // client side implications about how to process the received response from the server.
 //
 // Several assumptions are made on session based auth flows.
-// 1. AuthorStatusPassAdd is the default response we send.  This often turns to AuthorStatusPassRepl in the
-//    event that config specifies an optional avp.
-// 2. Config that has no match conditions, but has a service name that matches either the A or P in avp, will
-//    get all of their SetValues applied in the response.  It's an implicit match all.  We match on A or P because
-//    there are forms where P will be an empty string, EG, shell*.  Here A=shell, V=* and P="".  We also interchange
-//    avp with asv in some data structures.  AVP typically means attribute value pairs as read directly from the client
-//    or injected by the authorizer.  They are strings which form a []string as args.  ASV are attribute seperator values.
-//    These are special types that can disassemble an avp and reassemble it, while providing information about the values.
-// 3. Config that has Match values attached to them, those values must all be satisfied for the code to attach any
-//    SetValues in the response.
+//  1. AuthorStatusPassAdd is the default response we send.  This often turns to AuthorStatusPassRepl in the
+//     event that config specifies an optional avp.
+//  2. Config that has no match conditions, but has a service name that matches either the A or P in avp, will
+//     get all of their SetValues applied in the response.  It's an implicit match all.  We match on A or P because
+//     there are forms where P will be an empty string, EG, shell*.  Here A=shell, V=* and P="".  We also interchange
+//     avp with asv in some data structures.  AVP typically means attribute value pairs as read directly from the client
+//     or injected by the authorizer.  They are strings which form a []string as args.  ASV are attribute seperator values.
+//     These are special types that can disassemble an avp and reassemble it, while providing information about the values.
+//  3. Config that has Match values attached to them, those values must all be satisfied for the code to attach any
+//     SetValues in the response.
 type SessionBasedAuthorizer struct {
 	loggerProvider
 	ctx  context.Context
