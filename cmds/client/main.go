@@ -15,7 +15,7 @@ import (
 
 	tq "github.com/facebookincubator/tacquito"
 
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 var (
@@ -66,7 +66,7 @@ func getPassword() string {
 		return *password
 	}
 	fmt.Print("Enter Password: ")
-	raw, err := terminal.ReadPassword(0)
+	raw, err := term.ReadPassword(0)
 	if err != nil {
 		fmt.Println("unable to read password")
 		os.Exit(1)

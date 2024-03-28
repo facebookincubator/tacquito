@@ -15,7 +15,7 @@ import (
 	"os"
 
 	"golang.org/x/crypto/bcrypt"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 var (
@@ -61,7 +61,7 @@ func verifyFlags() {
 
 func getPassword(msg string) string {
 	fmt.Println(msg)
-	raw, err := terminal.ReadPassword(0)
+	raw, err := term.ReadPassword(0)
 	if err != nil {
 		fmt.Println("unable to read input")
 		os.Exit(1)
