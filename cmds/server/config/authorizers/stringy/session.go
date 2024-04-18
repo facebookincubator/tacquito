@@ -59,7 +59,6 @@ func (sa SessionBasedAuthorizer) Handle(response tq.Response, request tq.Request
 		response.Reply(
 			tq.NewAuthorReply(
 				tq.SetAuthorReplyStatus(status),
-				tq.SetAuthorReplyServerMsg("authorization approved"),
 				tq.SetAuthorReplyArgs(args...),
 			),
 		)

@@ -56,7 +56,6 @@ func (a CommandBasedAuthorizer) Handle(response tq.Response, request tq.Request)
 		response.Reply(
 			tq.NewAuthorReply(
 				tq.SetAuthorReplyStatus(tq.AuthorStatusPassAdd),
-				tq.SetAuthorReplyServerMsg("authorization approved"),
 			),
 		)
 		return
