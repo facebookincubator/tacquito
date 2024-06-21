@@ -132,7 +132,7 @@ func (a *AuthenticateASCII) getPassword(response tq.Response, request tq.Request
 		response.ReplyWithContext(
 			a.Context(),
 			tq.NewAuthenReply(
-				tq.SetAuthenReplyStatus(tq.AuthenStatusError),
+				tq.SetAuthenReplyStatus(tq.AuthenStatusFail),
 				tq.SetAuthenReplyServerMsg("unknown username or password"),
 			),
 			a.recorderWriter,
