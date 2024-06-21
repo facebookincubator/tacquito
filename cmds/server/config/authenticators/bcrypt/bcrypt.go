@@ -144,7 +144,6 @@ func (a Authenticator) Handle(response tq.Response, request tq.Request) {
 		response.Reply(
 			tq.NewAuthenReply(
 				tq.SetAuthenReplyStatus(tq.AuthenStatusPass),
-				tq.SetAuthenReplyServerMsg("login success"),
 			),
 		)
 		return
