@@ -14,7 +14,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -113,10 +112,9 @@ func (s *Server) serve(ctx context.Context, conn net.Conn) {
 		connectionDuration.Observe(ms)
 	}))
 	defer timer.ObserveDuration()
-	WithReqIDCtx := context.WithValue(ctx, ContextReqID, uuid.New().String())
 	// start a timer to measure loader duration
 	loaderStart := time.Now()
-	secret, handler, err := s.Get(WithReqIDCtx, conn.RemoteAddr())
+	secret, handler, err := s.Get(ctx, conn.RemoteAddr())
 	if err != nil || secret == nil || handler == nil {
 		s.Errorf(ctx, "ignoring request: %v", err)
 		conn.Close()
