@@ -265,7 +265,7 @@ func (l *Loader) updates() {
 func (l *Loader) createPrefixFilters(c config.ServerConfig) (*prefixFilter, *prefixFilter) {
 	prefixDeny := newPrefixFilter(strToIPNet(c.PrefixDeny))
 	prefixAllow := newPrefixFilter(strToIPNet(c.PrefixAllow))
-	l.Infof(l.ctx, "loaded [%v] deny filters and [%v] allow filters", len(c.PrefixDeny), len(c.PrefixAllow))
+	l.Debugf(l.ctx, "loaded [%v] deny filters and [%v] allow filters", len(c.PrefixDeny), len(c.PrefixAllow))
 	return prefixDeny, prefixAllow
 }
 
@@ -334,7 +334,7 @@ func (l Loader) build(c config.ServerConfig) []tq.SecretProvider {
 				opts = append(opts, config.SetAAAAuthorizer(a))
 			} else {
 				userAuthorizerUnassigned.Inc()
-				l.Infof(l.ctx, "no authorizer available in scope [%v] for user [%v]", provider.Name, u.Name)
+				l.Errorf(l.ctx, "no authorizer available in scope [%v] for user [%v]", provider.Name, u.Name)
 			}
 
 			if u.Authenticator != nil {
@@ -350,7 +350,7 @@ func (l Loader) build(c config.ServerConfig) []tq.SecretProvider {
 					opts = append(opts, config.SetAAAAuthenticator(a))
 				} else {
 					userAuthenticatorUnassigned.Inc()
-					l.Infof(l.ctx, "no authenticator assigned to authenticator type [%v] in scope [%v] on user [%v]", u.Authenticator.Type, provider.Name, u.Name)
+					l.Errorf(l.ctx, "no authenticator assigned to authenticator type [%v] in scope [%v] on user [%v]", u.Authenticator.Type, provider.Name, u.Name)
 				}
 			}
 			if u.Accounter != nil {
@@ -369,7 +369,6 @@ func (l Loader) build(c config.ServerConfig) []tq.SecretProvider {
 		if len(users) == 0 {
 			l.Errorf(l.ctx, "no users associated to scope [%v]; skipping scope", provider.Name)
 			userScopeUnassigned.Inc()
-			l.Errorf(l.ctx, "no users associated to secret config scope [%v]", provider.Name)
 			continue
 		}
 		handlerType := l.handlerTypes[provider.Handler.Type]
@@ -409,20 +408,20 @@ func (l Loader) reduceAuthenticatorAccounterFromGroups(scope string, u *config.U
 		userOverrideAccounter.Inc()
 	}
 	if u.Authenticator != nil && u.Accounter != nil {
-		l.Infof(l.ctx, "skipping authenticator and accounter for scope [%v] user [%v], both are already set at the user level", scope, u.Name)
+		l.Debugf(l.ctx, "skipping authenticator and accounter for scope [%v] user [%v], both are already set at the user level", scope, u.Name)
 		return
 	}
 	for _, g := range u.Groups {
 		if g.Authenticator != nil {
 			if u.Authenticator != nil {
-				l.Infof(l.ctx, "skipping authenticator for scope [%v] user [%v], it's already set at the user level", scope, u.Name)
+				l.Debugf(l.ctx, "skipping authenticator for scope [%v] user [%v], it's already set at the user level", scope, u.Name)
 			} else {
 				u.Authenticator = g.Authenticator
 			}
 		}
 		if g.Accounter != nil {
 			if u.Accounter != nil {
-				l.Infof(l.ctx, "skipping accounter for scope [%v] user [%v], it's already set at the user level", scope, u.Name)
+				l.Debugf(l.ctx, "skipping accounter for scope [%v] user [%v], it's already set at the user level", scope, u.Name)
 			} else {
 				u.Accounter = g.Accounter
 			}
