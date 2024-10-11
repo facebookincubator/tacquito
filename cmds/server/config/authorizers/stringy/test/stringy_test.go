@@ -152,6 +152,44 @@ func TestCommands(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "cisco; service=shell, cmd=check for regex boundaries",
+			user: config.User{
+				Name: "cisco",
+				Commands: []config.Command{
+					{
+						Name:   "bash",
+						Match:  []string{"cat.*"},
+						Action: config.PERMIT,
+					},
+				},
+			},
+			request: newAuthorRequest("cisco", tq.Args{"service=shell", "cmd=bash", "cmd-arg=/etc/some_folder/file_name_contains_cat.sh"}),
+			validate: func(name string, response *mockedResponse) {
+				if response.got.Status != tq.AuthorStatusFail {
+					assert.Fail(t, fmt.Sprintf("[%v] should have had a status of [%v] but got [%v]", name, tq.AuthorStatusFail, response.got.Status))
+				}
+			},
+		},
+		{
+			name: "cisco; service=shell, cmd=check that boundaries are not added if they are already set",
+			user: config.User{
+				Name: "cisco",
+				Commands: []config.Command{
+					{
+						Name:   "bash",
+						Match:  []string{"^cat.*$"},
+						Action: config.PERMIT,
+					},
+				},
+			},
+			request: newAuthorRequest("cisco", tq.Args{"service=shell", "cmd=bash", "cmd-arg=cat", "cmd-arg=/etc/some_folder/file_name_contains_cat.sh"}),
+			validate: func(name string, response *mockedResponse) {
+				if response.got.Status != tq.AuthorStatusPassAdd {
+					assert.Fail(t, fmt.Sprintf("[%v] should have had a status of [%v] but got [%v]", name, tq.AuthorStatusPassAdd, response.got.Status))
+				}
+			},
+		},
 	}
 	for _, test := range tests {
 		logger.Infof(ctx, "running test [%v]", test.name)

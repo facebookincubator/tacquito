@@ -134,7 +134,7 @@ func (t Args) Validate(condition interface{}) error {
 	return nil
 }
 
-// String returns Args as string, ignoring <cr> cmd-arg=<cr>
+// String returns Args as string
 func (t Args) String() string {
 	var b strings.Builder
 	for _, arg := range t {
@@ -188,6 +188,28 @@ func (t Args) CommandArgs() string {
 	for _, arg := range t {
 		a, _, v := arg.ASV()
 		if a == "cmd-arg" {
+			args = append(args, v)
+		}
+	}
+	return strings.Join(args, " ")
+}
+
+// isLineEnding returns true if a is a valid line ending for tacacs authorization
+// payload
+func isLineEnding(a string) bool {
+	return a == "<cr>" || a == "<CR>"
+}
+
+// CommandArgsNoLE joins all cmd-arg args into a single string
+// and ignores line endings, specifically <cr>
+func (t Args) CommandArgsNoLE() string {
+	args := make([]string, 0, len(t))
+	for idx, arg := range t {
+		a, _, v := arg.ASV()
+		if a == "cmd-arg" {
+			if idx == len(t)-1 && isLineEnding(v) {
+				continue
+			}
 			args = append(args, v)
 		}
 	}
