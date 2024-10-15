@@ -1,4 +1,3 @@
-	
 /*
  Copyright (c) Facebook, Inc. and its affiliates.
 
@@ -14,18 +13,18 @@ import (
 
 func TestArgsStripCR(t *testing.T) {
 
-	tests := []Args {
+	tests := []Args{
 
-	{
-		"cmd=show",
-		"cmd-arg=version",
-		"cmd-arg=<cr>",
-	},
-	{
-		"cmd=show",
-		"cmd-arg=version",
-		"cmd-arg=<Cr>",
-	},
+		{
+			"cmd=show",
+			"cmd-arg=version",
+			"cmd-arg=<cr>",
+		},
+		{
+			"cmd=show",
+			"cmd-arg=version",
+			"cmd-arg=<Cr>",
+		},
 	}
 	expected := "version"
 	for _, args := range tests {
