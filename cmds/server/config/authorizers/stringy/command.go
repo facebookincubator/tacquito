@@ -16,6 +16,15 @@ import (
 	"github.com/facebookincubator/tacquito/cmds/server/config"
 )
 
+const (
+	// default anchors for regex expressions embedded in command match attributes
+	// stored as bytes and strs for matching and concatenation
+	regexStartByte = '^'
+	regexEndByte   = '$'
+	regexStartStr  = "^"
+	regexEndStr    = "$"
+)
+
 // NewCommandBasedAuthorizer will return a CommandBasedAuthorizer authorizer. If initial request params
 // are not suitable for command based, it returns nil
 func NewCommandBasedAuthorizer(ctx context.Context, l loggerProvider, b tq.AuthorRequest, u config.User) *CommandBasedAuthorizer {
@@ -56,7 +65,6 @@ func (a CommandBasedAuthorizer) Handle(response tq.Response, request tq.Request)
 		response.Reply(
 			tq.NewAuthorReply(
 				tq.SetAuthorReplyStatus(tq.AuthorStatusPassAdd),
-				tq.SetAuthorReplyServerMsg("authorization approved"),
 			),
 		)
 		return
@@ -81,7 +89,6 @@ func (a CommandBasedAuthorizer) evaluate() bool {
 			return false
 		}
 	}
-
 	for _, c := range a.user.Commands {
 		c.TrimSpace()
 		if c.Name == "*" {
@@ -95,8 +102,19 @@ func (a CommandBasedAuthorizer) evaluate() bool {
 			// cmd matches, but we have no conditions, so match it
 			return returnBool(c.Action)
 		}
+
 		for _, regexish := range c.Match {
-			if matched, err := regexp.MatchString(regexish, a.body.Args.CommandArgs()); err != nil {
+			if len(regexish) == 0 {
+				continue
+			}
+			// guard against regexes that are not anchored to the start and end of the string
+			if regexish[0] != regexStartByte {
+				regexish = regexStartStr + regexish
+			}
+			if regexish[len(regexish)-1] != regexEndByte {
+				regexish = regexish + regexEndStr
+			}
+			if matched, err := regexp.MatchString(regexish, a.body.Args.CommandArgsNoLE()); err != nil {
 				a.Errorf(a.ctx, "bad regex detected; %v", err)
 				return false
 			} else if matched {

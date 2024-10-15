@@ -194,6 +194,28 @@ func (t Args) CommandArgs() string {
 	return strings.Join(args, " ")
 }
 
+// isLineEnding returns true if a is a valid line ending for tacacs authorization
+// payload
+func isLineEnding(a string) bool {
+	return strings.ToLower(a) == "<cr>"
+}
+
+// CommandArgsNoLE joins all cmd-arg args into a single string
+// and ignores line endings, specifically <cr>
+func (t Args) CommandArgsNoLE() string {
+	args := make([]string, 0, len(t))
+	for idx, arg := range t {
+		a, _, v := arg.ASV()
+		if a == "cmd-arg" {
+			if idx == len(t)-1 && isLineEnding(v) {
+				continue
+			}
+			args = append(args, v)
+		}
+	}
+	return strings.Join(args, " ")
+}
+
 // Args splits the Args into cmd, cmd-arg and other=arg
 // the key is the left side of the delimiter, etc
 func (t Args) Args() []string {
