@@ -12,15 +12,25 @@ import (
 )
 
 func TestArgsStripCR(t *testing.T) {
-	args := Args{
-		"cmd=show",
-		"cmd-arg=version",
-		"cmd-arg=<cr>",
+	tests := []Args{
+		{
+			"cmd=show",
+			"cmd-arg=version",
+			"cmd-arg=<cr>",
+		},
+		{
+			"cmd=show",
+			"cmd-arg=version",
+			"cmd-arg=<Cr>",
+		},
 	}
 	expected := "version"
-	if v := args.CommandArgsNoLE(); v != expected {
-		t.Fatalf("failed to get command args, expected %s, got %s", expected, v)
+	for _, args := range tests {
+		if v := args.CommandArgsNoLE(); v != expected {
+			t.Fatalf("failed to get command args, expected %s, got %s", expected, v)
+		}
 	}
+
 }
 
 func TestArgsStripCRInMiddle(t *testing.T) {

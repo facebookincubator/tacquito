@@ -197,7 +197,7 @@ func (t Args) CommandArgs() string {
 // isLineEnding returns true if a is a valid line ending for tacacs authorization
 // payload
 func isLineEnding(a string) bool {
-	return a == "<cr>" || a == "<CR>"
+	return strings.ToLower(a) == "<cr>"
 }
 
 // CommandArgsNoLE joins all cmd-arg args into a single string
