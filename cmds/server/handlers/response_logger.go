@@ -41,6 +41,9 @@ func (l *ResponseLogger) Write(ctx context.Context, p []byte) (int, error) {
 
 // Handle implements a middleware logger for next
 func (l *ResponseLogger) Handle(response tq.Response, request tq.Request) {
+	// ResponseLogger's context should include all of contextual fields from the request
+	// if the request's context was used to initialize the logger
+	request.Context = l.ctx
 	response.Context(l.ctx)
 	response.RegisterWriter(l)
 	l.next.Handle(response, request)
