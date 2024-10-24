@@ -40,6 +40,9 @@ const ContextReqArgs ContextKey = "req-args"
 // ContextAcctType ...
 const ContextAcctType ContextKey = "type"
 
+// ContextFlags logs the flags attribute of Accounting requests
+const ContextFlags ContextKey = "flags"
+
 // ContextPrivLvl ...
 const ContextPrivLvl ContextKey = "priv-lvl"
 

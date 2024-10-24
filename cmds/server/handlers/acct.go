@@ -43,7 +43,7 @@ func (a *AccountingRequest) Handle(response tq.Response, request tq.Request) {
 		return
 	}
 
-	a.RecordCtx(&request, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextAcctType, tq.ContextPort, tq.ContextPrivLvl)
+	a.RecordCtx(&request, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextAcctType, tq.ContextPort, tq.ContextPrivLvl, tq.ContextFlags)
 	// TODO implement a fallback for cases where a username may not be present.
 	c := a.GetUser(string(body.User))
 	if c == nil {

@@ -34,7 +34,7 @@ func (l *ResponseLogger) Write(ctx context.Context, p []byte) (int, error) {
 		return 0, err
 	}
 	request := tq.Request{Header: *packet.Header, Body: packet.Body[:], Context: ctx}
-	l.Record(ctx, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextAcctType, tq.ContextPrivLvl, tq.ContextPort))
+	l.Record(ctx, request.Fields(tq.ContextConnRemoteAddr, tq.ContextConnLocalAddr, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextAcctType, tq.ContextPrivLvl, tq.ContextPort, tq.ContextFlags))
 
 	return 0, nil
 }
