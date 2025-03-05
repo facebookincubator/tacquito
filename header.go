@@ -10,13 +10,8 @@ package tacquito
 import (
 	"encoding/binary"
 	"fmt"
-	"math/rand"
-	"time"
+	rand "math/rand/v2"
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 //
 // tacplus header
