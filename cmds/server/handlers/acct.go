@@ -47,7 +47,7 @@ func (a *AccountingRequest) Handle(response tq.Response, request tq.Request) {
 	// TODO implement a fallback for cases where a username may not be present.
 	c := a.GetUser(string(body.User))
 	if c == nil {
-		a.Debugf(request.Context, "[%v] user [%v] does not have an accounter associated", request.Header.SessionID, body.User)
+		a.Errorf(request.Context, "[%v] user [%v] does not have an accounter associated", request.Header.SessionID, body.User)
 		accountingHandleAccounterNil.Inc()
 		response.ReplyWithContext(
 			a.Context(),

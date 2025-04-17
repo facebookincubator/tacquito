@@ -29,7 +29,7 @@ type AuthorizeRequest struct {
 func (a *AuthorizeRequest) Handle(response tq.Response, request tq.Request) {
 	var body tq.AuthorRequest
 	if err := tq.Unmarshal(request.Body, &body); err != nil {
-		a.Debugf(request.Context, "failed to unmarshall AuthorRequest [%v]", err)
+		a.Errorf(request.Context, "failed to unmarshal AuthorRequest [%v]", err)
 		authorizerHandleUnexpectedPacket.Inc()
 		authorizerHandleError.Inc()
 		response.ReplyWithContext(
@@ -45,7 +45,7 @@ func (a *AuthorizeRequest) Handle(response tq.Response, request tq.Request) {
 	a.RecordCtx(&request, tq.ContextUser, tq.ContextRemoteAddr, tq.ContextReqArgs, tq.ContextPort, tq.ContextPrivLvl)
 	c := a.GetUser(string(body.User))
 	if c == nil {
-		a.Debugf(request.Context, "[%v] user [%v] does not have an authorizer associated", request.Header.SessionID, body.User)
+		a.Errorf(request.Context, "[%v] user [%v] does not have an authorizer associated", request.Header.SessionID, body.User)
 		authorizerHandleAuthorizerNil.Inc()
 		response.ReplyWithContext(
 			a.Context(),
