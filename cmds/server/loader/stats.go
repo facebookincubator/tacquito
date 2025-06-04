@@ -117,6 +117,13 @@ var (
 		Name:      "prefixFilter_denied",
 		Help:      "when prefixFilter denies a remote net.Addr, this is incremented",
 	})
+
+	// Durations
+	buildDuration = prometheus.NewSummary(prometheus.SummaryOpts{
+		Namespace: "tacquito",
+		Name:      "loader_build_duration",
+		Help:      "duration of a successful config build in milliseconds",
+	})
 )
 
 func init() {
@@ -141,4 +148,7 @@ func init() {
 	prometheus.MustRegister(userOverrideAccounter)
 	prometheus.MustRegister(prefixFilterAllowed)
 	prometheus.MustRegister(prefixFilterDenied)
+
+	// Durations
+	prometheus.MustRegister(buildDuration)
 }

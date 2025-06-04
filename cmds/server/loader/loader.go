@@ -16,6 +16,8 @@ import (
 
 	tq "github.com/facebookincubator/tacquito"
 	"github.com/facebookincubator/tacquito/cmds/server/config"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // loggerProvider provides the logging implementation
@@ -231,8 +233,13 @@ func (l *Loader) updates() {
 	for {
 		select {
 		case c := <-l.Config():
+			timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+				ms := v * 1000 // make milliseconds
+				buildDuration.Observe(ms)
+			}))
 			providers = l.build(c)
 			l.Infof(l.ctx, "updated all providers from config source")
+			timer.ObserveDuration()
 			prefixDeny, prefixAllow = l.createPrefixFilters(c)
 			l.Infof(l.ctx, "updated all prefix filters, where available, from config source")
 			buildUpdate.Inc()
