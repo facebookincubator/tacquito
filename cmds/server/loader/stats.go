@@ -120,9 +120,10 @@ var (
 
 	// Durations
 	buildDuration = prometheus.NewSummary(prometheus.SummaryOpts{
-		Namespace: "tacquito",
-		Name:      "loader_build_duration",
-		Help:      "duration of a successful config build in milliseconds",
+		Namespace:  "tacquito",
+		Name:       "loader_build_duration",
+		Help:       "duration of a successful config build in milliseconds",
+		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 	})
 )
 
