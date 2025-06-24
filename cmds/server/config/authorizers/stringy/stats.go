@@ -38,12 +38,26 @@ var (
 		Name:      "stringy_handle_unexpected_packet",
 		Help:      "number of stringy handle unexpected packets",
 	})
+
+	// v2
+	stringyHandleAuthorizeAcceptPassAddv2 = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "tacquito",
+		Name:      "stringy_handle_authorize_accept_pass_add_v2",
+		Help:      "number of stringy authorize accept pass add packets",
+	})
+	stringyHandleAuthorizeFailv2 = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "tacquito",
+		Name:      "stringy_handle_authorize_fail_v2",
+		Help:      "number of stringy authorize fail packets",
+	})
 )
 
 func init() {
 	prometheus.MustRegister(stringyHandleAuthorizeAcceptPassReplace)
 	prometheus.MustRegister(stringyHandleAuthorizeAcceptPassAdd)
+	prometheus.MustRegister(stringyHandleAuthorizeAcceptPassAddv2)
 	prometheus.MustRegister(stringyHandleAuthorizeFail)
+	prometheus.MustRegister(stringyHandleAuthorizeFailv2)
 	prometheus.MustRegister(stringyHandleAuthorizeError)
 	prometheus.MustRegister(stringyHandleUnexpectedPacket)
 }

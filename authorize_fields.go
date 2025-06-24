@@ -14,6 +14,12 @@ import (
 	"strings"
 )
 
+// MaxSplitCount is the maximum number of splits that can be performed on a command
+const MaxSplitCount = 5
+
+// most commands end with <cr> which comes from users pressing enter on the keyboards to run the command
+const lineEnding = "<cr>"
+
 // AuthenMethod per rfc and terribly named. Should read AuthorMethod, but rfc
 // defines it as authen_method.
 type AuthenMethod uint8
@@ -153,6 +159,95 @@ func (t Args) Service() string {
 		}
 	}
 	return s
+}
+
+// Split creates a new Args slice for each delimiter found in the original `t` Args.
+// The delimiter is expected to be a character usually utilized by vendors to separate commands, such as "|".
+// Multiple consecutive delimiters of the same value would be treated as two occurrences of the delimiter.
+// The returned slice will contain new command args that are split on the delimiter.
+// The number of splits is limited by MaxSplitCount to prevent unbounded growth.
+//
+// For example, a command "show interface brief | grep Up" would be represented as:
+//
+//	Args{
+//		Arg("cmd=show"),
+//		Arg("cmd-arg=interface"),
+//		Arg("cmd-arg=brief"),
+//		Arg("cmd-arg=|"),
+//		Arg("cmd-arg=grep"),
+//		Arg("cmd-arg=Up"),
+//		Arg("cmd-arg=<cr>")
+//	}
+//
+// When split on the delimiter, the above would be represented as:
+//
+//	[]Args{
+//		Args{Arg("cmd=show"), Arg("cmd-arg=interface"), Arg("cmd-arg=brief"), Arg("cmd-arg=<cr>")},
+//	    Args{Arg("cmd=|"), Arg("cmd-arg=grep"), Arg("cmd-arg=Up"), Arg("cmd-arg=<cr>")}
+//	}
+func (t Args) Split(delimiter string) []Args {
+	start := -1
+
+	type span struct {
+		start, end int
+	}
+	// Use MaxSplitCount to limit the capacity of spans
+	// +1 to account for the text before the first delimiter
+	spans := make([]span, 0, MaxSplitCount+1)
+	for end, arg := range t {
+		a, _, v := arg.ASV()
+		if a == "cmd-arg" && v == delimiter {
+			if len(spans) == MaxSplitCount {
+				// reached the max number of splits, return nil to signal an error
+				return nil
+			}
+			if start < 0 {
+				start++
+			}
+			if end-start > 0 {
+				spans = append(spans, span{start, end})
+			}
+			start = end
+		}
+	}
+	if start < 0 {
+		return []Args{t}
+	}
+	if start < len(t) {
+		spans = append(spans, span{start, len(t)})
+	}
+
+	combined := make([]Args, 0, len(spans))
+	service := t.Service()
+
+	for _, span := range spans {
+		args := make(Args, 0, span.end-span.start+2)
+		if span.end-span.start > 0 {
+			a, s, v := t[span.start].ASV()
+			// ensure the service is prepended
+			if a != "service" {
+				args = append(args, Arg("service="+service))
+			}
+
+			sidx, eidx := span.start, span.end
+			// rewrite the first cmd-arg as a cmd as a way to split the original command
+			if a == "cmd-arg" && v == delimiter {
+				args = append(args, Arg("cmd"+s+v))
+				sidx++
+			}
+			args = append(args, t[sidx:eidx]...)
+		}
+		// append line ending if absent
+		if len(args) > 0 {
+			_, _, v := args[len(args)-1].ASV()
+			if v != lineEnding {
+				args = append(args, Arg("cmd-arg="+lineEnding))
+			}
+		}
+		combined = append(combined, args)
+	}
+
+	return combined
 }
 
 // CommandSplit returns the attribute, separator and value of

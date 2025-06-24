@@ -23,15 +23,32 @@ type loggerProvider interface {
 	Debugf(ctx context.Context, format string, args ...interface{})
 }
 
+// Option is a functional option for the authorizer
+type Option func(*Authorizer)
+
+// EnableCmdV2 is a functional option to enable the new CommandBasedAuthorizerV2 instance
+func EnableCmdV2(enableV2 bool) Option {
+	return func(a *Authorizer) {
+		a.enableCmdV2 = enableV2
+	}
+}
+
 // New stringy Authorizer
-func New(l loggerProvider) *Authorizer {
-	return &Authorizer{loggerProvider: l}
+func New(l loggerProvider, opts ...Option) *Authorizer {
+	a := &Authorizer{loggerProvider: l}
+	for _, opt := range opts {
+		opt(a)
+	}
+	return a
 }
 
 // Authorizer is for authorization of commands and such
 type Authorizer struct {
 	loggerProvider
 	user config.User
+
+	// enableCmdV2 is a flag to enable the new CommandBasedAuthorizerV2 instance
+	enableCmdV2 bool
 }
 
 // New creates a new stringy authorizer which implements tq.Handler
@@ -42,6 +59,7 @@ func (a Authorizer) New(user config.User) (tq.Handler, error) {
 	return &Authorizer{
 		loggerProvider: a.loggerProvider,
 		user:           user,
+		enableCmdV2:    a.enableCmdV2,
 	}, nil
 }
 
@@ -80,10 +98,18 @@ func (a Authorizer) Handle(response tq.Response, request tq.Request) {
 		)
 	}
 
-	if authorizer := NewCommandBasedAuthorizer(request.Context, a.loggerProvider, body, a.user); authorizer != nil {
-		a.Debugf(request.Context, "detected user [%v] using command based authorization", a.user.Name)
-		authorizer.Handle(response, request)
-		return
+	if a.enableCmdV2 {
+		if authorizer := NewCommandBasedAuthorizerV2(request.Context, a.loggerProvider, body, a.user); authorizer != nil {
+			a.Debugf(request.Context, "detected user [%v] using command based authorization", a.user.Name)
+			authorizer.Handle(response, request)
+			return
+		}
+	} else {
+		if authorizer := NewCommandBasedAuthorizer(request.Context, a.loggerProvider, body, a.user); authorizer != nil {
+			a.Debugf(request.Context, "detected user [%v] using command based authorization", a.user.Name)
+			authorizer.Handle(response, request)
+			return
+		}
 	}
 
 	if authorizer := NewSessionBasedAuthorizer(request.Context, a.loggerProvider, body, a.user); authorizer != nil {
