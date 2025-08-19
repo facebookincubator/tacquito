@@ -86,18 +86,6 @@ func (a Authorizer) Handle(response tq.Response, request tq.Request) {
 		return
 	}
 
-	if a.user.Name != string(body.User) {
-		// this shouldn't really ever happen since this is scoped to this user, but we check nevertheless
-		a.Errorf(request.Context, "user in message body [%v] does not match scoped user: [%v]", body.User, a.user.Name)
-		stringyHandleAuthorizeFail.Inc()
-		response.Reply(
-			tq.NewAuthorReply(
-				tq.SetAuthorReplyStatus(tq.AuthorStatusFail),
-				tq.SetAuthorReplyServerMsg("not authorized"),
-			),
-		)
-	}
-
 	if a.enableCmdV2 {
 		if authorizer := NewCommandBasedAuthorizerV2(request.Context, a.loggerProvider, body, a.user); authorizer != nil {
 			a.Debugf(request.Context, "detected user [%v] using command based authorization", a.user.Name)
