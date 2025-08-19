@@ -8,21 +8,26 @@
 // Package config provides an example implementation of the tacquito.ConfigProvider interface.
 package config
 
+// Provider ...
+type Provider interface {
+	GetUser(user string) *AAA
+}
+
 // New returns a tacquito.ConfigProvider that maps a scoped username to a given
 // SecretConfig.
-func New() Provider {
+func New() AAAProvider {
 	return make(map[string]*AAA)
 }
 
-// Provider gives us scoped AAA types, which are a wrapped User type
-type Provider map[string]*AAA
+// AAAProvider gives us scoped AAA types, which are a wrapped User type
+type AAAProvider map[string]*AAA
 
 // New returns a scoped provider for users
-func (s Provider) New(users map[string]*AAA) Provider {
-	return Provider(users)
+func (s AAAProvider) New(users map[string]*AAA) Provider {
+	return AAAProvider(users)
 }
 
 // GetUser gets the handlers.Config that is associated to a username
-func (s Provider) GetUser(username string) *AAA {
+func (s AAAProvider) GetUser(username string) *AAA {
 	return s[username]
 }
