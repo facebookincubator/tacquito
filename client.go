@@ -34,6 +34,16 @@ func SetClientDialer(network, address string, secret []byte) ClientOption {
 	}
 }
 
+// SetClientWithConn uses an existing connection to create a [ClientOption].
+// This is useful for cases where a custom connection is required.
+// A secret for the connection must also be provided.
+func SetClientWithConn(conn *net.TCPConn, secret []byte) ClientOption {
+	return func(c *Client) error {
+		c.crypter = newCrypter(secret, conn, false)
+		return nil
+	}
+}
+
 // SetClientDialerWithLocalAddr see net.ResolveTCPAddr for details, this follows
 // the same input requirements for network and address.  raddr is the destination tcp address
 // to dial to, and laddr is the client address to dial from, if set to an empty string, then
