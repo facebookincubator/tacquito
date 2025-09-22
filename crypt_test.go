@@ -187,7 +187,7 @@ func BenchmarkCrypterAllocation(b *testing.B) {
 
 	// record allocations regardless of go test -test.bench
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		crypt(secret, packet)
 	}
 }
