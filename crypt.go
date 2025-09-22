@@ -89,8 +89,8 @@ func crypt(secret []byte, p *Packet) error {
 }
 
 // newCrypter makes a new crypter
-func newCrypter(secret []byte, c net.Conn, proxy bool) *crypter {
-	return &crypter{secret: secret, Conn: c, Reader: bufio.NewReaderSize(c, 107), proxy: proxy}
+func newCrypter(secret []byte, c net.Conn, proxy, tls bool) *crypter {
+	return &crypter{secret: secret, Conn: c, Reader: bufio.NewReaderSize(c, 107), proxy: proxy, tls: tls}
 }
 
 // crypter wraps the net.Conn and performs reads and writes and crypt ops
@@ -106,6 +106,8 @@ type crypter struct {
 	secret []byte
 	// proxy if set, will strip the ha-proxy style ascii header
 	proxy bool
+
+	tls bool
 }
 
 // read will read a packet from the underlying net.Conn and decyrpt it
@@ -154,22 +156,42 @@ func (c *crypter) read() (*Packet, error) {
 		crypterUnmarshalError.Inc()
 		return nil, err
 	}
-	// run crypt first before we look for bad secrets
-	if err := crypt(c.secret, &p); err != nil {
-		crypterCryptError.Inc()
-		return nil, err
-	}
-	// if err is != nil, we hit a bug
-	// if reply is != nil, we found a bad secret.
-	// if both are non nil, we only inspect the error as that
-	// is a higher error condition in the server than a bad secret is
-	if reply, err := c.detectBadSecret(&p); err != nil {
-		return nil, err
-	} else if reply != nil {
-		if _, err := c.write(reply); err != nil {
-			return nil, fmt.Errorf("bad secret, crypt write fail for ip [%s]: %v", c.RemoteAddr().String(), err)
+
+	if !c.tls {
+		// obfuscation mechanism only applies to non-tls connections
+		// run crypt first before we look for bad secrets
+		if err := crypt(c.secret, &p); err != nil {
+			crypterCryptError.Inc()
+			return nil, err
 		}
-		return nil, fmt.Errorf("bad secret detected for ip [%s]", c.RemoteAddr().String())
+		// if err is != nil, we hit a bug
+		// if reply is != nil, we found a bad secret.
+		// if both are non nil, we only inspect the error as that
+		// is a higher error condition in the server than a bad secret is
+		if reply, err := c.detectBadSecret(&p); err != nil {
+			return nil, err
+		} else if reply != nil {
+			if _, err := c.write(reply); err != nil {
+				return nil, fmt.Errorf("bad secret, crypt write fail for ip [%s]: %w", c.RemoteAddr().String(), err)
+			}
+			return nil, fmt.Errorf("bad secret detected for ip [%s]", c.RemoteAddr().String())
+		}
+	} else {
+		/*
+			A TLS TACACS+ server that receives a packet with the TAC_PLUS_UNENCRYPTED_FLAG bit
+			not set to 1 over a TLS connection, MUST return an error of TAC_PLUS_AUTHEN_STATUS_ERROR,
+			TAC_PLUS_AUTHOR_STATUS_ERROR, or TAC_PLUS_ACCT_STATUS_ERROR as appropriate for the
+			TACACS+ message type, with the TAC_PLUS_UNENCRYPTED_FLAG bit set to 1, and terminate the session
+		*/
+		if !p.Header.Flags.Has(UnencryptedFlag) {
+			reply, err := c.unsetFlagReply(p.Header)
+			if err != nil {
+				return nil, err
+			}
+			if _, err := c.write(reply); err != nil {
+				return nil, fmt.Errorf("unencrypted flag not set, crypt write fail for ip [%s]: %w", c.RemoteAddr().String(), err)
+			}
+		}
 	}
 
 	crypterRead.Inc()
@@ -185,10 +207,17 @@ func (c *crypter) write(p *Packet) (int, error) {
 		return 0, fmt.Errorf("handler error, packet.Body cannot be nil")
 	}
 	p.Header.Length = uint32(len(p.Body))
-	if err := crypt(c.secret, p); err != nil {
-		crypterCryptError.Inc()
-		return 0, err
+	if !c.tls {
+		if err := crypt(c.secret, p); err != nil {
+			crypterCryptError.Inc()
+			return 0, err
+		}
+	} else {
+		// before we marshal, we need to set the unencrypted flag
+		// on packets when tls is enabled
+		p.Header.Flags.Set(UnencryptedFlag)
 	}
+
 	b, err := p.MarshalBinary()
 	if err != nil {
 		crypterMarshalError.Inc()
@@ -264,6 +293,57 @@ func (c crypter) detectBadSecret(p *Packet) (*Packet, error) {
 		}
 	}
 	return nil, nil
+}
+
+func (c crypter) unsetFlagReply(h *Header) (*Packet, error) {
+	var b []byte
+	var err error
+	switch h.Type {
+	case Authenticate:
+		b, err = NewAuthenReply(
+			SetAuthenReplyStatus(AuthenStatusError),
+			SetAuthenReplyServerMsg("unencrypted flag not set"),
+		).MarshalBinary()
+		if err != nil {
+			crypterMarshalError.Inc()
+			return nil, err
+		}
+	case Authorize:
+		b, err = NewAuthorReply(
+			SetAuthorReplyStatus(AuthorStatusError),
+			SetAuthorReplyServerMsg("unencrypted flag not set"),
+		).MarshalBinary()
+		if err != nil {
+			crypterMarshalError.Inc()
+			return nil, err
+		}
+	case Accounting:
+		b, err = NewAcctReply(
+			SetAcctReplyStatus(AcctReplyStatusError),
+			SetAcctReplyServerMsg("unencrypted flag not set"),
+		).MarshalBinary()
+		if err != nil {
+			crypterMarshalError.Inc()
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unknown header type [%v]", h.Type)
+	}
+	// reset some flags and state for this error reply.
+	// under error conditions it can be common in the rfc to reset the sequence to 1
+	// if the error is particularly egregious.  an unset encrypted flag on a TLS connection seems like it fits and
+	// the rfc is unclear for this particular condition on what to do
+	h.SeqNo = SequenceNumber(1)
+	h.Flags.Set(UnencryptedFlag)
+
+	p := NewPacket(
+		SetPacketHeader(h),
+		SetPacketBody(b),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
 }
 
 func (c crypter) badSecretReply(h *Header) (*Packet, error) {

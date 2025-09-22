@@ -28,18 +28,48 @@ var (
 	remAddr    = flag.String("rem-addr", "", "the remote address the client is coming from.")
 	secret     = flag.String("secret", "fooman", "the tacacs secret to be used.")
 	authenMode = flag.String("authen-mode", "pap", "valid choices, [pap ascii]")
+
+	// TLS options
+	useTLS                = flag.Bool("tls", false, "enable TLS support as per IETF draft-ietf-opsawg-tacacs-tls13-07")
+	tlsCertFile           = flag.String("tls-cert", "", "path to TLS client certificate file")
+	tlsKeyFile            = flag.String("tls-key", "", "path to TLS client key file")
+	tlsCAFile             = flag.String("tls-ca", "", "path to TLS CA certificate file for server certificate validation")
+	tlsServerName         = flag.String("tls-server-name", "", "server name for TLS certificate validation")
+	tlsInsecureSkipVerify = flag.Bool("tls-insecure-skip-verify", false, "skip TLS certificate verification (not recommended for production)")
 )
 
 func main() {
 	flag.Parse()
 	verifyFlags()
 
-	c, err := tq.NewClient(tq.SetClientDialer(*network, *address, []byte(*secret)))
-	if err != nil {
-		fmt.Printf("%v\n", err)
-		os.Exit(1)
+	var c *tq.Client
+	var err error
+
+	if *useTLS {
+		// Create TLS configuration
+		tlsConfig, tlsErr := tq.GenClientTLSConfig(*tlsServerName, *tlsCertFile, *tlsKeyFile, *tlsCAFile, *tlsInsecureSkipVerify)
+		if tlsErr != nil {
+			fmt.Printf("Error creating TLS config: %v\n", tlsErr)
+			os.Exit(1)
+		}
+
+		// Create client with TLS support
+		c, err = tq.NewClient(tq.SetClientTLSDialer(*network, *address, tlsConfig))
+		if err != nil {
+			fmt.Printf("Error creating TLS client: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("Connected to server using TLS")
+	} else {
+		// Create standard client
+		c, err = tq.NewClient(tq.SetClientDialer(*network, *address, []byte(*secret)))
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			os.Exit(1)
+		}
 	}
 	defer c.Close()
+
 	switch *authenMode {
 	case "pap":
 		pap(c)

@@ -29,7 +29,7 @@ func SetClientDialer(network, address string, secret []byte) ClientOption {
 		if err != nil {
 			return err
 		}
-		c.crypter = newCrypter(secret, conn, false)
+		c.crypter = newCrypter(secret, conn, false, false)
 		return nil
 	}
 }
@@ -39,7 +39,7 @@ func SetClientDialer(network, address string, secret []byte) ClientOption {
 // A secret for the connection must also be provided.
 func SetClientWithConn(conn *net.TCPConn, secret []byte) ClientOption {
 	return func(c *Client) error {
-		c.crypter = newCrypter(secret, conn, false)
+		c.crypter = newCrypter(secret, conn, false, false)
 		return nil
 	}
 }
@@ -64,7 +64,7 @@ func SetClientDialerWithLocalAddr(network, raddr, laddr string, secret []byte) C
 		if err != nil {
 			return err
 		}
-		c.crypter = newCrypter(secret, conn, false)
+		c.crypter = newCrypter(secret, conn, false, false)
 		return nil
 	}
 }
