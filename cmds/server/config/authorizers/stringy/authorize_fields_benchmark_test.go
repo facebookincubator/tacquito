@@ -24,7 +24,7 @@ func BenchmarkSplitNoDelimiter(b *testing.B) {
 	delimiter := "|"
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = args.Split(delimiter)
 	}
 }
@@ -43,7 +43,7 @@ func BenchmarkSplitOneDelimiter(b *testing.B) {
 	delimiter := "|"
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = args.Split(delimiter)
 	}
 }
@@ -65,7 +65,7 @@ func BenchmarkSplitMultipleDelimiters(b *testing.B) {
 	delimiter := "|"
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = args.Split(delimiter)
 	}
 }
@@ -84,7 +84,7 @@ func BenchmarkSplitDifferentDelimiter(b *testing.B) {
 	delimiter := ";"
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = args.Split(delimiter)
 	}
 }
@@ -114,7 +114,7 @@ func BenchmarkSplitMaxDelimiters(b *testing.B) {
 	delimiter := "|"
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = args.Split(delimiter)
 	}
 }
@@ -145,7 +145,7 @@ func BenchmarkSplitExceedMaxDelimiters(b *testing.B) {
 	delimiter := "|"
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = args.Split(delimiter)
 	}
 }
@@ -175,7 +175,7 @@ func BenchmarkSplitLongCommand(b *testing.B) {
 	delimiter := "|"
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = args.Split(delimiter)
 	}
 }
@@ -196,7 +196,7 @@ func BenchmarkSplitConsecutiveDelimiters(b *testing.B) {
 	delimiter := "|"
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = args.Split(delimiter)
 	}
 }
@@ -207,7 +207,7 @@ func BenchmarkSplitEmptyArgs(b *testing.B) {
 	delimiter := "|"
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = args.Split(delimiter)
 	}
 }
