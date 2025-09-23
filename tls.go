@@ -48,9 +48,8 @@ func GenTLSConfig(certFile, keyFile, CAFile string, requireMutualAuth bool) (*tl
 		ClientAuth: tls.VerifyClientCertIfGiven, // Mutual authentication is optional
 	}
 
-	// If TLS is enabled but no certificate/key files are provided, log a warning
 	if certFile == "" || keyFile == "" {
-		return nil, errors.New("TLS is enabled but certificate or key file is not provided. Server may fail to start.")
+		return nil, errors.New("TLS is enabled but certificate or key file is not provided")
 	}
 
 	// Load server certificate and key
@@ -88,14 +87,15 @@ func GenClientTLSConfig(serverName, certFile, keyFile, CAFile string, skipVerifi
 		InsecureSkipVerify: skipVerification,
 	}
 
-	// Load client certificate and key if provided
-	if certFile != "" && keyFile != "" {
-		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-		if err != nil {
-			return nil, err
-		}
-		config.Certificates = []tls.Certificate{cert}
+	if certFile == "" || keyFile == "" {
+		return nil, errors.New("Client config: TLS is enabled but certificate or key file is not provided")
 	}
+
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return nil, err
+	}
+	config.Certificates = []tls.Certificate{cert}
 
 	// Set RootCAs for server certificate verification if CA file is provided
 	if CAFile != "" {
@@ -107,7 +107,7 @@ func GenClientTLSConfig(serverName, certFile, keyFile, CAFile string, skipVerifi
 		if !certPool.AppendCertsFromPEM(data) {
 			return nil, errors.New("failed to append CA certificates")
 		}
-		config.RootCAs = certPool // Use RootCAs for client, not ClientCAs
+		config.RootCAs = certPool
 	}
 
 	return config, nil

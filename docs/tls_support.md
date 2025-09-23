@@ -27,7 +27,7 @@ The following command-line options have been added to the server to support TLS:
 When using TLS, IANA recommends a different port (tacacss) for TACACS+ over TLS.
 
 ```
-  -address ":49"              Standard TACACS+ port (works with TLS)
+  -address ":49"              Standard TACACS+ port
   -address ":XXXX"            Alternative TACACS+ port (tacacss:300)
                               In this document, we will use port 6653 for testing
 ```
@@ -192,13 +192,6 @@ openssl verify -CAfile ca.crt client.crt
 ```bash
 ./client -tls -username cisco -address "localhost:6653" \
   -tls-ca ca.crt -tls-cert client.crt -tls-key client.key
-```
-
-### TLS Client with Server Name Verification
-
-```bash
-./client -tls -username cisco -address "localhost:6653" -secret "shared_secret" \
-  -tls-ca ca.crt -tls-server-name "localhost"
 ```
 
 ### TLS Client with Insecure Skip Verify (Testing Only)
@@ -398,17 +391,6 @@ execute pap authentication
 2. TACACS+ protocol layer has issues
 3. Check that client sends unencrypted packets within TLS tunnel
 4. Verify server expects unencrypted packets for TLS connections
-
-### 9. Step-by-Step Debugging Workflow
-
-When facing TLS issues, follow this systematic approach:
-
-1. **Start with certificate verification** - Use `openssl verify` and `openssl x509 -text`
-2. **Test basic TLS handshake** - Use `openssl s_client` before trying TACACS+
-3. **Check server logs** - Look for specific error messages
-4. **Test without mutual TLS first** - Verify server certificate validation works
-5. **Add client certificates gradually** - Test mutual TLS only after basic TLS works
-6. **Enable verbose logging** - Add debugging flags to see detailed error messages
 
 ### 10. Useful OpenSSL Commands Reference
 
