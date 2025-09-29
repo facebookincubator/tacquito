@@ -142,7 +142,7 @@ func (c *crypter) read() (*Packet, error) {
 	// read the length field from the bytes of the header to know how many more bytes we need to get
 	s := int(binary.BigEndian.Uint32(h[8:]))
 	if s > int(MaxBodyLength) {
-		return nil, fmt.Errorf("max header length exceeded in crypt read, aborting")
+		return nil, fmt.Errorf("max header length exceeded in crypt read, aborting. tls enabled: [%t]", c.tls)
 	}
 	b := make([]byte, s)
 	if _, err := io.ReadFull(c.Reader, b); err != nil {
@@ -184,6 +184,7 @@ func (c *crypter) read() (*Packet, error) {
 			TACACS+ message type, with the TAC_PLUS_UNENCRYPTED_FLAG bit set to 1, and terminate the session
 		*/
 		if !p.Header.Flags.Has(UnencryptedFlag) {
+			crypterReadFlagError.Inc()
 			reply, err := c.unsetFlagReply(p.Header)
 			if err != nil {
 				return nil, err
