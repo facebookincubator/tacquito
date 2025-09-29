@@ -413,6 +413,140 @@ openssl rsa -noout -modulus -in server.key | openssl md5
 # The MD5 hashes should match
 ```
 
+# TLS Configuration File
+
+The TACACS+ client supports loading TLS configuration from a JSON file using the
+`-tls-config` flag. When a TLS configuration file is specified, TLS is
+automatically enabled for the connection.
+
+## Architecture Overview
+
+The TLS configuration follows this flow:
+
+1. **JSON Config File** → `LoadTLSConfig()` → **`ParsedTLSConfig` struct**
+2. **`ParsedTLSConfig`** → `GenClientTLSConfig()` → **`tls.Config` for client**
+3. **Client** uses the generated `tls.Config` to establish TLS connections
+
+### Key Components
+
+- **`ParsedTLSConfig`**: A Go struct that represents the TLS configuration loaded from JSON
+- **`LoadTLSConfig()`**: Function that loads and validates the JSON configuration file
+- **`GenClientTLSConfig()`**: Function that creates a `tls.Config` from `ParsedTLSConfig`
+- **Automatic path resolution**: Relative paths are automatically converted to absolute paths
+- **File validation**: All certificate files are verified to exist during configuration loading
+
+## File Format
+
+The TLS configuration file must be in JSON format. See `tls.conf` for a sample config.
+
+## Configuration Options
+
+| Field                  | Type    | Description                                                      | Required |
+| ---------------------- | ------- | ---------------------------------------------------------------- | -------- |
+| `cert_file`            | string  | Absolute/Relative Path to client certificate file (PEM format)                     | No       |
+| `key_file`             | string  | Absolute/Relative Path to client private key file (PEM format)                     | No       |
+| `ca_file`              | string  | Absolute/Relative Path to CA certificate file for server verification (PEM format) | No       |
+| `server_name`          | string  | Server name for certificate validation (must match server's SAN) | No       |
+| `insecure_skip_verify` | boolean | Skip certificate verification (not recommended for production)   | No       |
+
+### Path Handling
+
+- **Relative paths**: `./client.crt`, `../certs/ca.crt`, `config/client.key`
+- **Absolute paths**: `/etc/ssl/certs/client.crt`, `/path/to/ca.crt`
+- **Path validation**: All specified certificate files are verified to exist during configuration loading
+- **Automatic resolution**: Relative paths are automatically converted to absolute paths
+- **No shell expansion**: Tilde (`~`) and environment variables are not supported
+
+## Usage Examples
+
+### Basic TLS with server certificate verification:
+
+```json
+{
+  "ca_file": "./ca.crt",
+  "server_name": "localhost",
+  "insecure_skip_verify": false
+}
+```
+
+```bash
+./client -tls-config tls.json -username cisco
+```
+
+### Mutual TLS (client and server certificates):
+
+```json
+{
+  "cert_file": "./client.crt",
+  "key_file": "./client.key",
+  "ca_file": "./ca.crt",
+  "server_name": "localhost",
+  "insecure_skip_verify": false
+}
+```
+
+```bash
+./client -tls-config tls.json -username cisco
+```
+
+### Development/Testing with insecure skip verify:
+
+```json
+{
+  "cert_file": "./client.crt",
+  "key_file": "./client.key",
+  "server_name": "localhost",
+  "insecure_skip_verify": true
+}
+```
+
+```bash
+./client -tls-config tls.json -username cisco
+```
+
+**⚠️ Warning**: Never use `insecure_skip_verify: true` in production environments.
+
+## Implementation Details
+
+### ParsedTLSConfig Structure
+
+The `ParsedTLSConfig` struct contains:
+
+```go
+type ParsedTLSConfig struct {
+    // Certificate files
+    CertFile string `json:"cert_file"`
+    KeyFile  string `json:"key_file"`
+    CAFile   string `json:"ca_file"`
+
+    // Server name for certificate validation
+    ServerName string `json:"server_name"`
+
+    // Skip certificate verification (not recommended for production)
+    InsecureSkipVerify bool `json:"insecure_skip_verify"`
+}
+```
+
+### Configuration Validation
+
+During `LoadTLSConfig()`, the system:
+
+- ✅ **Validates JSON syntax** and structure
+- ✅ **Converts relative paths** to absolute paths using `filepath.Abs()`
+- ✅ **Verifies file existence** for all certificate files using `os.Stat()`
+- ✅ **Validates certificate/key pairs** (cert_file requires key_file and vice versa)
+- ✅ **Returns descriptive errors** for missing files or invalid configurations
+
+### Client TLS Config Generation
+
+The `GenClientTLSConfig()` function creates a standard Go `tls.Config` with:
+
+- **TLS 1.3 minimum version** (as per IETF draft requirements)
+- **Server name indication** from `server_name` field
+- **Client certificates** loaded from `cert_file` and `key_file`
+- **Root CA certificates** loaded from `ca_file` for server verification
+- **Skip verification flag** from `insecure_skip_verify` (if enabled)
+
 ## Security Considerations
 
 When deploying TACACS+ over TLS in production:
