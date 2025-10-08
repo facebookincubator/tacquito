@@ -25,7 +25,6 @@ func New() *YAML {
 
 // YAML loads all users from a given config filename
 type YAML struct {
-	config.ServerConfig
 	config chan config.ServerConfig
 }
 
@@ -45,16 +44,17 @@ func (l *YAML) Load(path string) error {
 
 // Unmarshal will decode bytes
 func (l *YAML) Unmarshal(b []byte) error {
-	if err := yaml.Unmarshal(b, &l.ServerConfig); err != nil {
+	var cfg config.ServerConfig
+	if err := yaml.Unmarshal(b, &cfg); err != nil {
 		return fmt.Errorf("unable to unmarshal server config; %v", err)
 	}
-	if len(l.Secrets) < 1 {
+	if len(cfg.Secrets) < 1 {
 		return fmt.Errorf("no secret providers were unmarshalled from config, cannot serve")
 	}
-	if len(l.Users) < 1 {
+	if len(cfg.Users) < 1 {
 		return fmt.Errorf("no users were unmarshalled from config, cannot serve")
 	}
-	l.config <- l.ServerConfig
+	l.config <- cfg
 	return nil
 }
 

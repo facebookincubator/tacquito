@@ -24,7 +24,7 @@ func TestYamlLoad(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 	// if you get a bad config parse error, this will block because of how buck hides stderr/out
-	<-l.Config()
+	actual := <-l.Config()
 	spew.Dump(l)
 
 	bcrypt := &config.Authenticator{
@@ -81,22 +81,21 @@ func TestYamlLoad(t *testing.T) {
 		},
 	}
 
-	expected := yaml.YAML{
-		ServerConfig: config.ServerConfig{
-			Users: users,
-			Secrets: []config.SecretConfig{
-				{
-					Name:    "localhost",
-					Secret:  config.Keychain{Group: "tacquito", Key: "fooman"},
-					Handler: config.Handler{Type: config.START},
-					Type:    config.PREFIX,
-					Options: map[string]string{
-						"prefixes": "[\n  \"::0/0\"\n]\n",
-					},
+	expected := config.ServerConfig{
+		Users: users,
+		Secrets: []config.SecretConfig{
+			{
+				Name:    "localhost",
+				Secret:  config.Keychain{Group: "tacquito", Key: "fooman"},
+				Handler: config.Handler{Type: config.START},
+				Type:    config.PREFIX,
+				Options: map[string]string{
+					"prefixes": "[\n  \"::0/0\"\n]\n",
 				},
 			},
 		},
 	}
-	assert.Equal(t, expected.Users, l.Users)
-	assert.Equal(t, expected.Secrets, l.Secrets)
+
+	assert.Equal(t, expected.Users, actual.Users)
+	assert.Equal(t, expected.Secrets, actual.Secrets)
 }
