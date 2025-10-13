@@ -284,7 +284,7 @@ func TestSurge(t *testing.T) {
 		}()
 	}
 	var wg sync.WaitGroup
-	for i := 0; i < numberOfClients; i++ {
+	for range numberOfClients {
 		wg.Add(1)
 		do(queue, &wg)
 	}
