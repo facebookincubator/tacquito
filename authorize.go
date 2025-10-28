@@ -165,7 +165,7 @@ func (a *AuthorRequest) UnmarshalBinary(data []byte) error {
 
 	var totalArgLen int
 	argLens := make([]int, 0, argCnt)
-	for i := 0; i < argCnt; i++ {
+	for range argCnt {
 		aLen := buf.int()
 		totalArgLen += aLen
 		argLens = append(argLens, aLen)
@@ -335,7 +335,7 @@ func (a *AuthorReply) UnmarshalBinary(data []byte) error {
 
 	var totalArgLen int
 	argLens := make([]int, 0, argCnt)
-	for i := 0; i < argCnt; i++ {
+	for range argCnt {
 		aLen := buf.int()
 		totalArgLen += aLen
 		argLens = append(argLens, aLen)
