@@ -90,7 +90,6 @@ func (a CommandBasedAuthorizer) evaluate() bool {
 		}
 	}
 	for _, c := range a.user.Commands {
-		c.TrimSpace()
 		if c.Name == "*" {
 			// special condition of allow anything
 			return returnBool(c.Action)

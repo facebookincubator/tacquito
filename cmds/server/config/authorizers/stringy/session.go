@@ -86,7 +86,6 @@ func (sa SessionBasedAuthorizer) evaluate() ([]string, tq.AuthorStatus) {
 	authorStatus := tq.AuthorStatusPassAdd
 
 	for _, s := range sa.user.Services {
-		s.TrimSpace()
 		// optional == true means we hit a client delim of * or we encountered it in our own config
 		// via Optional = true.
 		matched, optional := sa.serviceMatcherModifier(args, s)

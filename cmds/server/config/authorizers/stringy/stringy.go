@@ -69,6 +69,15 @@ func (a Authorizer) ReduceAll(u *config.User) {
 		u.Services = append(u.Services, g.Services...)
 		u.Commands = append(u.Commands, g.Commands...)
 	}
+
+	// Trim whitespace from commands and services once during initialization to avoid data races
+	// when these are accessed concurrently by multiple goroutines during request processing
+	for i := range u.Commands {
+		u.Commands[i].TrimSpace()
+	}
+	for i := range u.Services {
+		u.Services[i].TrimSpace()
+	}
 }
 
 // Handle handles all authenticate message types, scoped to the uid
