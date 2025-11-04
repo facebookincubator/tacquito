@@ -10,6 +10,7 @@ package tacquito
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -109,19 +110,19 @@ func (s *sessions) close() {
 // a counter that can be used in Serve()
 type waitGroup struct {
 	sync.WaitGroup
-	active uint
+	active atomic.Int32
 }
 
 // Add adds to WaitGroup and increments the count
 func (w *waitGroup) Add(delta int) {
 	waitgroupActive.Inc()
 	w.WaitGroup.Add(delta)
-	w.active++
+	w.active.Add(1)
 }
 
 // Done decrements WaitGroup and the counter
 func (w *waitGroup) Done() {
 	waitgroupActive.Dec()
 	w.WaitGroup.Done()
-	w.active--
+	w.active.Add(-1)
 }
