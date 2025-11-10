@@ -28,18 +28,49 @@ var (
 	remAddr    = flag.String("rem-addr", "", "the remote address the client is coming from.")
 	secret     = flag.String("secret", "fooman", "the tacacs secret to be used.")
 	authenMode = flag.String("authen-mode", "pap", "valid choices, [pap ascii]")
+
+	// TLS options
+	tlsConfigFile = flag.String("tls-config", "", "path to TLS configuration file in JSON format. When set, the values inside the file this will override all other TLS cmdline flags")
 )
 
 func main() {
 	flag.Parse()
+
 	verifyFlags()
 
-	c, err := tq.NewClient(tq.SetClientDialer(*network, *address, []byte(*secret)))
-	if err != nil {
-		fmt.Printf("%v\n", err)
-		os.Exit(1)
+	var c *tq.Client
+	var err error
+
+	if *tlsConfigFile != "" {
+		config, err := tq.LoadTLSConfig(*tlsConfigFile)
+		if err != nil {
+			fmt.Printf("Error loading TLS config file: %v\n", err)
+			os.Exit(1)
+		}
+		// Create TLS configuration
+		tlsConfig, tlsErr := tq.GenClientTLSConfig(config)
+		if tlsErr != nil {
+			fmt.Printf("Error creating TLS config: %v\n", tlsErr)
+			os.Exit(1)
+		}
+
+		// Create client with TLS support
+		c, err = tq.NewClient(tq.SetClientTLSDialer(*network, *address, tlsConfig))
+		if err != nil {
+			fmt.Printf("Error creating TLS client: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("Connected to server using TLS")
+	} else {
+		// Create standard client
+		c, err = tq.NewClient(tq.SetClientDialer(*network, *address, []byte(*secret)))
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			os.Exit(1)
+		}
 	}
 	defer c.Close()
+
 	switch *authenMode {
 	case "pap":
 		pap(c)
