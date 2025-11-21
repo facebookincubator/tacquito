@@ -96,7 +96,7 @@ func (w writer) Write(ctx context.Context, p []byte) (int, error) {
 		spanHandleWriteError.Inc()
 		s := fmt.Sprintf("Skipping packet, switchAddr don't match, actual addr %v vs configured addr %v", remoteAddr, w.switchAddr)
 		w.Errorf(w.ctx, s)
-		return 0, fmt.Errorf(s)
+		return 0, fmt.Errorf("%s", s)
 	}
 	packet := tq.NewPacket()
 	packet.UnmarshalBinary(p)
@@ -104,7 +104,7 @@ func (w writer) Write(ctx context.Context, p []byte) (int, error) {
 		spanHandleWriteError.Inc()
 		s := fmt.Sprintf("Skipping packet, Packet types don't match, actual type %v vs configured type %v", packet.Header.Type, w.packetType)
 		w.Errorf(w.ctx, s)
-		return 0, fmt.Errorf(s)
+		return 0, fmt.Errorf("%s", s)
 	}
 	if w.remAddr != "" {
 		req := tq.Request{Header: *packet.Header, Body: packet.Body[:]}
@@ -114,7 +114,7 @@ func (w writer) Write(ctx context.Context, p []byte) (int, error) {
 			spanHandleWriteError.Inc()
 			s := fmt.Sprintf("Skipping packet, client IPs don't match, actual client IP %v vs configured IP %v", remAddrField, w.remAddr)
 			w.Errorf(w.ctx, s)
-			return 0, fmt.Errorf(s)
+			return 0, fmt.Errorf("%s", s)
 		}
 	}
 	n, err := w.Conn.Write(p)
