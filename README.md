@@ -1,4 +1,4 @@
-![tacqutio build](https://github.com/facebookincubator/tacquito/actions/workflows/push.yml/badge.svg)
+![tacquito build](https://github.com/facebookincubator/tacquito/actions/workflows/push.yml/badge.svg)
 
 # Tacquito - An RFC8907 TACACS+ Implementation
 
@@ -69,10 +69,10 @@ Defines how the server will group client devices or even a single device dependi
 * secret - the secret keychain implementation to use.  You have group and key in the example implementation but could be changed to anything required.
 * handler - this is the first handler accepted clients land on; typically START.  SPAN is also available or you are welcome to create your own.
 * type - the type of secret provider to use.  Examples include DNS or PREFIX.
-* options - a map[str,str] of free form options.  Providers typically need extra hints about what to use or how to bootstrap themselves.  Exmaple use is found in DNS and PREFIX.
+* options - a map[str,str] of free form options.  Providers typically need extra hints about what to use or how to bootstrap themselves.  Example use is found in DNS and PREFIX.
 
 ### Keychain
-Defines what group and optionally what key to use when interacting with Keychain.  Keychain defines what PSK to use within the tacas protocol.  We only provide trivial implemenations for these and you should definitely consider how to securely store/retrieve your secrets in a provider that meets your needs.
+Defines what group and optionally what key to use when interacting with Keychain.  Keychain defines what PSK to use within the tacacs protocol.  We only provide trivial implementations for these and you should definitely consider how to securely store/retrieve your secrets in a provider that meets your needs.
 
 ### Handler
 Defines what handler the server will use to service the matching connection that the SecretConfig matched against.  The handler is usually Start or Span, depending on your config.  Take special care when reviewing the Span handler.
@@ -81,7 +81,7 @@ Defines what handler the server will use to service the matching connection that
 The ordered list of SecretConfigs which form our SecretProvider list define how we communicate with a device; the PSK to use, the potential clients accept provider (dns, prefix, etc), and the initial handler.  The name of the provider is the "scope" used on the users.  First match wins.
 
 ## Users
-Defines a username within a system. The user object defines the scope a user is a member of and optionally includes services, commands, authenticators and accounters.  If any of these items are done at thet user level, they are explicit overrides from any inherited groups.
+Defines a username within a system. The user object defines the scope a user is a member of and optionally includes services, commands, authenticators and accounters.  If any of these items are done at the user level, they are explicit overrides from any inherited groups.
 
 * name - the username with the system.  usernames need not be globally unique, but they must be unique per scope.
 * scope - the unique name of a SecretConfig to associate this user to.
@@ -89,7 +89,7 @@ Defines a username within a system. The user object defines the scope a user is 
 * services - services to allow. used only when you want to override values inherited from groups.
 * commands - commands to allow. used only when you want to override values inherited from groups.
 * authenticator - the authenticator provider type to use. used only when you want to override values inherited from groups.
-* accounter - the authenticator provider type to use. used only when you want to override values inherited from groups.
+* accounter - the accounter provider type to use. used only when you want to override values inherited from groups.
 
 ### Key Takeaway
 User config is core to tacquitos implementation. When config is loaded, we compose this down to individual user settings.  Any directives associated to the user override any conflicting directives obtained from the groups.  Usernames need only be unique within the scopes that they are used in.  Said differently, all configuration is ultimately applied on the user either through inheritance from groups or via overrides on the user object.  The config at this point should be considered user level only as it gets loaded into the associated SecretProvider.  If other injected code then manipulates this user object within that scope, the changes are constrained there, allowing for extremely precise changes and preventing unintended propagation to different scopes.
@@ -128,7 +128,7 @@ Injectable only from main.go - no config knobs exist for this.
 Simply, how you log accounting data to your respective backend.  This could be a log file, or something more complex.
 
 ### Key Takeaway
-All three A(s) are optional.  There is no RFC requirement that authentication occurs on the same system that authorization, nor accounting does.  Even enable requests do not demand a previous authentication or authorization.  Assume nothing in terms of AAA state when running more than one instance of this service.  Failing to provide an implementation for one of the A(s) will result in a default deny to the client.
+All three A(s) are optional.  There is no RFC requirement that authentication occurs on the same system that authorization or accounting does.  Even enable requests do not demand a previous authentication or authorization.  Assume nothing in terms of AAA state when running more than one instance of this service.  Failing to provide an implementation for one of the A(s) will result in a default deny to the client.
 
 # Service Architecture Overview
 Tacquito is designed with dependency injection at its heart.  Whenever we had the option to allow for something to be injected, we did so.  This created a service that was very flexible, but at the cost of increased complexity in terms of how it pulled everything together.  Ultimately, this created an extremely flexible service that can easily pivot internal requirements to create a main binary that can run under any environment and not risk breaking any other dependencies should some be removed or replaced.  Keep dependency injection in mind when considering the layout.
@@ -144,7 +144,7 @@ Provides authentication, authorization and accounting injection points.  YAML is
 The server loop is implemented in the main tacquito package.  All connection management occurs in github.com/facebookincubator/tacquito/server.go.  A private session manager implementation is enforced here and is one of the rare examples of something we did not expose to dependency injection.  All handlers are called from this loop.
 
 ## Handlers
-Handlers are everywhere.  They can be middleware and anything in between a client accept, response or disconnect.  handlers may be implemented as higher order functions or implement the handler interface.  All handlers are replaceable, wrapable or removable via dependency injection.
+Handlers are everywhere.  They can be middleware and anything in between a client accept, response or disconnect.  handlers may be implemented as higher order functions or implement the handler interface.  All handlers are replaceable, wrappable or removable via dependency injection.
 
 
 Interface:
