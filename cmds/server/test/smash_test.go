@@ -9,10 +9,11 @@ package test
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"io"
 	"math/rand"
 	"net"
-	"os"
 	"sync"
 	"testing"
 	"time"
@@ -228,8 +229,9 @@ func acctSmasher(sessionID int) Test {
 		},
 	}
 }
+
 func TestSurge(t *testing.T) {
-	logger := log.New(30, os.Stderr)
+	logger := log.New(30, io.Discard)
 	ctx := context.Background()
 	sp, err := MockSecretProvider(ctx, logger, "testdata/test_config.yaml")
 	assert.NoError(t, err)
@@ -285,6 +287,84 @@ func TestSurge(t *testing.T) {
 	}
 	var wg sync.WaitGroup
 	for range numberOfClients {
+		wg.Add(1)
+		do(queue, &wg)
+	}
+	for _, ctest := range tests {
+		queue <- ctest
+	}
+	close(queue)
+	wg.Wait()
+}
+
+func TestSurgeTLS(t *testing.T) {
+	testDir := t.TempDir()
+	_, _, serverTLSConfig, err := GenerateTLSCertificate(testDir)
+	assert.NoError(t, err)
+
+	logger := log.New(30, io.Discard)
+	ctx := context.Background()
+	sp, err := MockSecretProvider(ctx, logger, "testdata/test_config.yaml")
+	assert.NoError(t, err)
+
+	// Create TLS listener
+	listener, err := net.Listen("tcp6", "[::1]:0")
+	assert.NoError(t, err)
+	tlsListener, err := tq.NewTLSListener(listener, serverTLSConfig)
+	assert.NoError(t, err)
+
+	s := tq.NewServer(logger, sp, tq.SetUseTLS(true))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() {
+		if err := s.Serve(ctx, tlsListener); err != nil {
+			assert.NoError(t, err)
+		}
+	}()
+
+	// Client TLS config (with insecure skip verify for test certificates)
+	clientTLSConfig := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	// number of sessions to create
+	maxSession := 1500
+	// use a map to randomize session entry
+	tests := map[int]Test{}
+	for i := 1; i <= maxSession; i += 3 {
+		tests[i] = asciiSmasher(i)
+		tests[i+1] = authorSmasher(i + 1)
+		tests[i+2] = acctSmasher(i + 2)
+	}
+
+	// number of clients to create
+	numberOfClients := 75
+	queue := make(chan Test, numberOfClients)
+	do := func(ctest <-chan Test, wg *sync.WaitGroup) {
+		c, err := tq.NewClient(tq.SetClientTLSDialer("tcp6", listener.Addr().String(), clientTLSConfig))
+		if err != nil {
+			assert.FailNow(t, fmt.Sprintf("%v", err))
+		}
+		go func() {
+			defer c.Close()
+			max := 1000
+			min := 1
+			ticker := time.NewTicker(time.Duration(rand.Intn(max-min)+min) * time.Millisecond)
+			for ct := range ctest {
+				// artificial delay
+				<-ticker.C
+				for _, s := range ct.Seq {
+					resp, err := c.Send(s.Packet)
+					assert.NoError(t, err)
+					err = s.Validate(resp)
+					assert.NoError(t, err)
+				}
+			}
+			wg.Done()
+		}()
+	}
+	var wg sync.WaitGroup
+	for i := 0; i < numberOfClients; i++ {
 		wg.Add(1)
 		do(queue, &wg)
 	}
