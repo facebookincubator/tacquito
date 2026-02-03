@@ -126,3 +126,8 @@ func (w *waitGroup) Done() {
 	w.WaitGroup.Done()
 	w.active.Add(-1)
 }
+
+// Active returns the current number of active connections
+func (w *waitGroup) Active() int32 {
+	return w.active.Load()
+}

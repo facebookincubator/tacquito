@@ -65,7 +65,7 @@ func (s *Server) Serve(ctx context.Context, listener DeadlineListener) error {
 		if err != nil {
 			s.Errorf(ctx, "%s", err)
 		}
-		s.Infof(ctx, "waiting for [%v] connections to close prior to shutdown", s.active)
+		s.Infof(ctx, "waiting for [%v] connections to close prior to shutdown", s.Active())
 		s.Wait()
 	}()
 
