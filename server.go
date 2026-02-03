@@ -29,6 +29,14 @@ func SetUseProxy(v bool) Option {
 	}
 }
 
+// SetUseTLS enables TLS support for TACACS+ as defined in
+// https://www.ietf.org/archive/id/draft-ietf-opsawg-tacacs-tls13-07.html
+func SetUseTLS(v bool) Option {
+	return func(s *Server) {
+		s.useTLS = v
+	}
+}
+
 // NewServer returns a new server.
 // loggerProvider - the logging backend to use
 // listener - net.Listener
@@ -49,6 +57,9 @@ type Server struct {
 
 	// enables ha-proxy ascii proxy header support
 	proxy bool
+
+	// enables TACACS over TLS support
+	useTLS bool
 }
 
 // DeadlineListener is a net.Listener that supports Deadlines
@@ -123,7 +134,7 @@ func (s *Server) serve(ctx context.Context, conn net.Conn) {
 	}
 	ctx = context.WithValue(ctx, ContextLoaderDuration, time.Since(loaderStart).Milliseconds())
 	serveAccepted.Inc()
-	s.handle(ctx, newCrypter(secret, conn, s.proxy, false), handler)
+	s.handle(ctx, newCrypter(secret, conn, s.proxy, s.useTLS), handler)
 	serveAccepted.Dec()
 }
 

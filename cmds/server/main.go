@@ -9,7 +9,6 @@ package main
 
 import (
 	"context"
-
 	"flag"
 	"net"
 	"os"
@@ -38,6 +37,13 @@ var (
 	configPath        = flag.String("config", "tacquito.yaml", "the string path representing the storage location of the server config")
 	accountingLogPath = flag.String("acct-log-path", "/tmp/tacquito_accounting.log", "the string path representing the storage location of the server accounting logs")
 	level             = flag.Int("level", 30, "log levels; 10 = error, 20 = info, 30 = debug")
+
+	// TLS options
+	useTLS               = flag.Bool("tls", false, "enable TLS support as per IETF draft-ietf-opsawg-tacacs-tls13-07")
+	tlsCertFile          = flag.String("tls-cert", "", "path to TLS certificate file")
+	tlsKeyFile           = flag.String("tls-key", "", "path to TLS key file")
+	tlsCAFile            = flag.String("tls-ca", "", "path to TLS CA certificate file for client certificate validation")
+	tlsRequireClientCert = flag.Bool("tls-require-client-cert", false, "require client certificates for TLS connections")
 )
 
 func main() {
@@ -84,21 +90,43 @@ func main() {
 	}
 
 	// setup our listener
+	var tqListener tq.DeadlineListener
+
 	listener, err := net.Listen(*network, *address)
 	if err != nil {
 		logger.Fatalf(ctx, "error reading address: %v", err)
 		return
 	}
 
-	tcpListener, ok := listener.(*net.TCPListener)
-	if !ok {
-		logger.Fatalf(ctx, "listener must be a tcp based listener")
-		return
-	}
-	logger.Infof(ctx, "serve on %v", tcpListener.Addr().String())
+	// Create server with options
+	serverOpts := []tq.Option{tq.SetUseProxy(*proxy)}
 
-	s := tq.NewServer(logger, sp, tq.SetUseProxy(*proxy))
-	if err := s.Serve(ctx, tcpListener); err != nil {
+	if *useTLS {
+		// If TLS is enabled but no certificate/key files are provided, log error an exit
+		config, err := tq.GenTLSConfig(*tlsCertFile, *tlsKeyFile, *tlsCAFile, *tlsRequireClientCert)
+		if err != nil {
+			logger.Errorf(ctx, "error generating tls config: %v", err)
+			return
+		}
+		tlsListen, err := tq.NewTLSListener(listener, config)
+		if err != nil {
+			logger.Errorf(ctx, "error creating tls listener: %v", err)
+			return
+		}
+		tqListener = tlsListen
+		serverOpts = append(serverOpts, tq.SetUseTLS(true))
+	} else {
+		tcpListener, ok := listener.(*net.TCPListener)
+		if !ok {
+			logger.Errorf(ctx, "listener must be a tcp based listener")
+			return
+		}
+		tqListener = tcpListener
+		logger.Infof(ctx, "serve on %v", tcpListener.Addr().String())
+	}
+
+	s := tq.NewServer(logger, sp, serverOpts...)
+	if err := s.Serve(ctx, tqListener); err != nil {
 		logger.Errorf(ctx, "error listening: %v", err)
 		return
 	}
