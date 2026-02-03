@@ -32,6 +32,7 @@ func SetClientTLSDialer(network, address string, tlsConfig *tls.Config) ClientOp
 // network and raddr specify the server to connect to.
 // laddr specifies the local address to connect from.
 // tlsConfig is the TLS configuration to use for the connection.
+// if laddr is empty, SetClientTLSDialer is used.
 func SetClientTLSDialerWithLocalAddr(network, raddr, laddr string, tlsConfig *tls.Config) ClientOption {
 	return func(c *Client) error {
 		// Resolve the local address if provided
@@ -42,6 +43,9 @@ func SetClientTLSDialerWithLocalAddr(network, raddr, laddr string, tlsConfig *tl
 			if err != nil {
 				return err
 			}
+		} else {
+			// return standard client
+			return SetClientTLSDialer(network, raddr, tlsConfig)(c)
 		}
 
 		// Create a dialer with the local address

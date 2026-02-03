@@ -50,8 +50,12 @@ func SetClientWithConn(conn *net.TCPConn, secret []byte) ClientOption {
 // the function will fall back to DialTCP's default selection of a local interface
 // with a nil source addr and a constructed TCPAddr from the provided network and address.
 // A secret for the connection must also be provided.
+// if laddr is not set, then SetClientDialer is used
 func SetClientDialerWithLocalAddr(network, raddr, laddr string, secret []byte) ClientOption {
 	return func(c *Client) error {
+		if laddr == "" {
+			return SetClientDialer(network, raddr, secret)(c)
+		}
 		localAddr, err := net.ResolveTCPAddr(network, laddr)
 		if err != nil {
 			fmt.Printf("unable to assign local address %v:%v, a default address will be chosen", laddr, err)
