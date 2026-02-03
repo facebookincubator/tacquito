@@ -30,24 +30,25 @@ var (
 	authenMode = flag.String("authen-mode", "pap", "valid choices, [pap ascii]")
 
 	// TLS options
-	useTLS                = flag.Bool("tls", false, "enable TLS support as per IETF draft-ietf-opsawg-tacacs-tls13-07")
-	tlsCertFile           = flag.String("tls-cert", "", "path to TLS client certificate file")
-	tlsKeyFile            = flag.String("tls-key", "", "path to TLS client key file")
-	tlsCAFile             = flag.String("tls-ca", "", "path to TLS CA certificate file for server certificate validation")
-	tlsServerName         = flag.String("tls-server-name", "", "server name for TLS certificate validation")
-	tlsInsecureSkipVerify = flag.Bool("tls-insecure-skip-verify", false, "skip TLS certificate verification (not recommended for production)")
+	tlsConfigFile = flag.String("tls-config", "", "path to TLS configuration file in JSON format. When set, the values inside the file this will override all other TLS cmdline flags")
 )
 
 func main() {
 	flag.Parse()
+
 	verifyFlags()
 
 	var c *tq.Client
 	var err error
 
-	if *useTLS {
+	if *tlsConfigFile != "" {
+		config, err := tq.LoadTLSConfig(*tlsConfigFile)
+		if err != nil {
+			fmt.Printf("Error loading TLS config file: %v\n", err)
+			os.Exit(1)
+		}
 		// Create TLS configuration
-		tlsConfig, tlsErr := tq.GenClientTLSConfig(*tlsServerName, *tlsCertFile, *tlsKeyFile, *tlsCAFile, *tlsInsecureSkipVerify)
+		tlsConfig, tlsErr := tq.GenClientTLSConfig(config)
 		if tlsErr != nil {
 			fmt.Printf("Error creating TLS config: %v\n", tlsErr)
 			os.Exit(1)
