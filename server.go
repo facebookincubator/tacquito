@@ -123,7 +123,7 @@ func (s *Server) serve(ctx context.Context, conn net.Conn) {
 	}
 	ctx = context.WithValue(ctx, ContextLoaderDuration, time.Since(loaderStart).Milliseconds())
 	serveAccepted.Inc()
-	s.handle(ctx, newCrypter(secret, conn, s.proxy), handler)
+	s.handle(ctx, newCrypter(secret, conn, s.proxy, false), handler)
 	serveAccepted.Dec()
 }
 
