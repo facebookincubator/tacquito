@@ -186,6 +186,7 @@ func (c *crypter) read() (*Packet, error) {
 			TACACS+ message type, with the TAC_PLUS_UNENCRYPTED_FLAG bit set to 1, and terminate the session
 		*/
 		if !p.Header.Flags.Has(UnencryptedFlag) {
+			crypterReadFlagError.Inc()
 			reply, err := c.unsetFlagReply(p.Header)
 			if err != nil {
 				return nil, err

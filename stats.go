@@ -73,6 +73,11 @@ var (
 		Name:      "crypter_marshal_error",
 		Help:      "number of errors marshalling in crypter",
 	})
+	crypterReadFlagError = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "tacquito",
+		Name:      "crypter_tls_read_unencrypt_flag_error",
+		Help:      "number of errors the tls unencrypted flag was unset on a conn read",
+	})
 	waitgroupActive = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "tacquito",
 		Name:      "waitgroup_handle_routines_active",
@@ -133,6 +138,7 @@ func init() {
 	prometheus.MustRegister(crypterUnmarshalError)
 	prometheus.MustRegister(crypterMarshalError)
 	prometheus.MustRegister(crypterCryptError)
+	prometheus.MustRegister(crypterReadFlagError)
 	prometheus.MustRegister(waitgroupActive)
 	prometheus.MustRegister(sessionsActive)
 	prometheus.MustRegister(sessionsGetHit)

@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -613,6 +614,9 @@ func TestCrypterReadTLSWithUnencryptedFlag(t *testing.T) {
 
 // TestCrypterReadTLSWithoutUnencryptedFlag tests the read method with TLS enabled but UnencryptedFlag not set
 func TestCrypterReadTLSWithoutUnencryptedFlag(t *testing.T) {
+	// Capture the counter value before the test
+	counterBefore := testutil.ToFloat64(crypterReadFlagError)
+
 	// Create a valid TACACS+ packet WITHOUT UnencryptedFlag set
 	body := NewAuthenStart(
 		SetAuthenStartAction(AuthenActionLogin),
@@ -658,6 +662,10 @@ func TestCrypterReadTLSWithoutUnencryptedFlag(t *testing.T) {
 	// Verify that an error response was written to the connection
 	// The mockConnection should now have the error response in its data
 	assert.Greater(t, len(mockConn.data), 0, "Expected error response to be written to connection")
+
+	// Verify that the crypterReadFlagError counter was incremented
+	counterAfter := testutil.ToFloat64(crypterReadFlagError)
+	assert.Equal(t, counterBefore+1, counterAfter, "Expected crypterReadFlagError counter to be incremented")
 }
 
 // TestCrypterReadNonTLSEncrypted tests the read method with TLS disabled and encrypted packet
