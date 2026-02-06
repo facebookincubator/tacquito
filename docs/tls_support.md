@@ -227,7 +227,7 @@ echo | timeout 5 openssl s_client -connect localhost:6653 -CAfile ca.crt \
 
 The TLS implementation follows these key principles:
 
-1. **TLS Version**: Requires TLS 1.3 as specified in the IETF draft
+1. **TLS Version**: Requires TLS 1.3 as specified in the IETF draft. Note: The server does not currently enforce TLS 1.3 to allow existing deployments time to migrate.
 2. **Certificate Validation**: Properly validates server and client certificates with SAN extensions
 3. **Packet Processing**: TACACS+ packets are sent unencrypted within the TLS tunnel (with UnencryptedFlag set)
 4. **Backward Compatibility**: The server can still operate in non-TLS mode for backward compatibility
@@ -392,7 +392,7 @@ execute pap authentication
 3. Check that client sends unencrypted packets within TLS tunnel
 4. Verify server expects unencrypted packets for TLS connections
 
-### 10. Useful OpenSSL Commands Reference
+### 9. Useful OpenSSL Commands Reference
 
 ```bash
 # Generate certificates with debugging
@@ -401,8 +401,8 @@ openssl req -new -key server.key -out server.csr -config server.conf -verbose
 # View certificate details
 openssl x509 -in server.crt -text -noout
 
-# Test specific cipher suites
-echo | openssl s_client -connect localhost:6653 -cipher ECDHE-RSA-AES256-GCM-SHA384
+# Test specific TLS 1.3 cipher suites
+echo | openssl s_client -connect localhost:6653 -ciphersuites TLS_AES_256_GCM_SHA384
 
 # Check certificate expiration
 openssl x509 -in server.crt -noout -dates
