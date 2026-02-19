@@ -50,6 +50,11 @@ var (
 		Name:      "stringy_handle_authorize_fail_v2",
 		Help:      "number of stringy authorize fail packets",
 	})
+	stringyRemAddrMatcherError = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "tacquito",
+		Name:      "stringy_handle_session_remaddr_matcher_error",
+		Help:      "number of errors in parsing prefixes inside the rem-addr matcher",
+	})
 )
 
 func init() {
@@ -60,4 +65,5 @@ func init() {
 	prometheus.MustRegister(stringyHandleAuthorizeFailv2)
 	prometheus.MustRegister(stringyHandleAuthorizeError)
 	prometheus.MustRegister(stringyHandleUnexpectedPacket)
+	prometheus.MustRegister(stringyRemAddrMatcherError)
 }

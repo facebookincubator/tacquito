@@ -10,6 +10,7 @@ package stringy
 
 import (
 	"context"
+	"net"
 
 	tq "github.com/facebookincubator/tacquito"
 	"github.com/facebookincubator/tacquito/cmds/server/config"
@@ -19,6 +20,15 @@ import (
 // are not suitable for command based, it returns nil
 func NewSessionBasedAuthorizer(ctx context.Context, l loggerProvider, b tq.AuthorRequest, u config.User) *SessionBasedAuthorizer {
 	return &SessionBasedAuthorizer{ctx: ctx, loggerProvider: l, body: b, user: u}
+}
+
+// matcherFunc defines a custom matcher func for certain fields that need more complexity than
+// string based matching
+type matcherFunc func(needle string, haystack []string) bool
+
+// fieldsMatcher defines a mapping between a TACACS authz attribute and a custom matcher func
+var fieldsMatcher = map[string]matcherFunc{
+	"rem-addr": matchRemAddr,
 }
 
 // SessionBasedAuthorizer provides a session based authorizer
@@ -80,6 +90,9 @@ func (sa SessionBasedAuthorizer) evaluate() ([]string, tq.AuthorStatus) {
 	// requested client args and allows them to behave in evaluation the same as if they came from the client.  We do this for
 	// args that will never present in a client request, but for things we'd like to filter on.  A use cases is filtering for scope
 	sa.body.Args = append(sa.body.Args, tq.Arg(sa.user.GetLocalizedScope()))
+	if len(sa.body.RemAddr) > 0 {
+		sa.body.Args = append(sa.body.Args, tq.Arg("rem-addr="+sa.body.RemAddr))
+	}
 
 	args := sa.body.Args.Args()
 	responseArgs := make(tq.Args, 0, len(args))
@@ -179,6 +192,14 @@ func (sa SessionBasedAuthorizer) serviceMatcher(args []string, matchers []config
 		if !ok {
 			return false
 		}
+		if mfunc, ok := fieldsMatcher[m.Name]; ok {
+			if val := mfunc(kvs[m.Name], m.Values); !val {
+				return false
+			}
+			// if we did find a more specific matcher then don't try and look for other
+			// string matching conditions
+			continue
+		}
 		for _, v := range m.Values {
 			if argV != v {
 				return false
@@ -187,4 +208,24 @@ func (sa SessionBasedAuthorizer) serviceMatcher(args []string, matchers []config
 	}
 	// this is true if len(m.Match)== 0 OR we looped over all match conditions and they were true
 	return true
+}
+
+// matchRemAddr checks if the remote address from the session context
+// falls within any of the provided CIDR prefixes. Returns true if any prefix matches.
+func matchRemAddr(needle string, haystack []string) bool {
+	ip := net.ParseIP(needle)
+	if ip == nil {
+		return false
+	}
+	for _, prefix := range haystack {
+		_, ipNet, err := net.ParseCIDR(prefix)
+		if err != nil {
+			stringyRemAddrMatcherError.Inc()
+			continue
+		}
+		if ipNet.Contains(ip) {
+			return true
+		}
+	}
+	return false
 }

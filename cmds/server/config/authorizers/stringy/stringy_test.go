@@ -48,7 +48,6 @@ func shuffle(args tq.Args) {
 }
 
 func TestSpecialMatchers(t *testing.T) {
-
 	tests := []specialMatchTest{
 		{
 			name: "basic match",
@@ -461,5 +460,204 @@ func TestSpecialMatchers(t *testing.T) {
 		sa := NewSessionBasedAuthorizer(context.Background(), NewDefaultLogger(), *r, u)
 		resp, status := sa.evaluate()
 		test.expect(t, test.name, resp, status)
+	}
+}
+
+func TestRemAddrMatchers(t *testing.T) {
+	tests := []specialMatchTest{
+		{
+			name: "ipv6 /128 match returns rem-addr service priv-lvl plus fallback",
+			setup: func() (*tq.AuthorRequest, config.User) {
+				r := tq.NewAuthorRequest(
+					tq.SetAuthorRequestArgs(
+						tq.Args{"service=shell", "cmd=", "scope=foo-scope"},
+					),
+					tq.SetAuthorRequestRemAddr(tq.AuthenRemAddr("2620:10d:c0a8:b3::31")),
+				)
+				u := config.User{
+					Scopes: []string{"foo-scope"},
+					Services: []config.Service{
+						{
+							Name: "shell",
+							Match: []config.Value{
+								{Name: "rem-addr", Values: []string{"2620:10d:c0a8:b3::31/128"}},
+							},
+							SetValues: []config.Value{
+								{Name: "priv-lvl", Values: []string{"1"}, Optional: true},
+							},
+						},
+						{
+							Name: "shell",
+							SetValues: []config.Value{
+								{Name: "priv-lvl", Values: []string{"14"}, Optional: true},
+							},
+						},
+					},
+				}
+				u.LocalizeToScope("foo-scope")
+				return r, u
+			},
+			expect: func(t *testing.T, name string, resp []string, status tq.AuthorStatus) {
+				assert.Equal(t, []string{"priv-lvl*1", "priv-lvl*14"}, resp, "%s failed", name)
+				assert.Equal(t, tq.AuthorStatusPassRepl, status, "%s failed", name)
+			},
+		},
+		{
+			name: "ipv6 no match falls through to fallback service",
+			setup: func() (*tq.AuthorRequest, config.User) {
+				r := tq.NewAuthorRequest(
+					tq.SetAuthorRequestArgs(
+						tq.Args{"service=shell", "cmd=", "scope=foo-scope"},
+					),
+					tq.SetAuthorRequestRemAddr(tq.AuthenRemAddr("2620:10d:c0a8:b3::32")),
+				)
+				u := config.User{
+					Scopes: []string{"foo-scope"},
+					Services: []config.Service{
+						{
+							Name: "shell",
+							Match: []config.Value{
+								{Name: "rem-addr", Values: []string{"2620:10d:c0a8:b3::31/128"}},
+							},
+							SetValues: []config.Value{
+								{Name: "priv-lvl", Values: []string{"1"}, Optional: true},
+							},
+						},
+						{
+							Name: "shell",
+							SetValues: []config.Value{
+								{Name: "priv-lvl", Values: []string{"14"}, Optional: true},
+							},
+						},
+					},
+				}
+				u.LocalizeToScope("foo-scope")
+				return r, u
+			},
+			expect: func(t *testing.T, name string, resp []string, status tq.AuthorStatus) {
+				assert.Equal(t, []string{"priv-lvl*14"}, resp, "%s failed", name)
+				assert.Equal(t, tq.AuthorStatusPassRepl, status, "%s failed", name)
+			},
+		},
+		{
+			name: "supernet match returns both matched and fallback priv-lvl",
+			setup: func() (*tq.AuthorRequest, config.User) {
+				r := tq.NewAuthorRequest(
+					tq.SetAuthorRequestArgs(
+						tq.Args{"service=shell", "cmd=", "scope=foo-scope"},
+					),
+					tq.SetAuthorRequestRemAddr(tq.AuthenRemAddr("2620:10d:c0a8:b3::32")),
+				)
+				u := config.User{
+					Scopes: []string{"foo-scope"},
+					Services: []config.Service{
+						{
+							Name: "shell",
+							Match: []config.Value{
+								{Name: "rem-addr", Values: []string{"2620:10d:c0a8:b3::/64"}},
+							},
+							SetValues: []config.Value{
+								{Name: "priv-lvl", Values: []string{"3"}, Optional: true},
+							},
+						},
+						{
+							Name: "shell",
+							SetValues: []config.Value{
+								{Name: "priv-lvl", Values: []string{"14"}, Optional: true},
+							},
+						},
+					},
+				}
+				u.LocalizeToScope("foo-scope")
+				return r, u
+			},
+			expect: func(t *testing.T, name string, resp []string, status tq.AuthorStatus) {
+				assert.Equal(t, []string{"priv-lvl*3", "priv-lvl*14"}, resp, "%s failed", name)
+				assert.Equal(t, tq.AuthorStatusPassRepl, status, "%s failed", name)
+			},
+		},
+		{
+			name: "multiple addresses to match on succeeds",
+			setup: func() (*tq.AuthorRequest, config.User) {
+				r := tq.NewAuthorRequest(
+					tq.SetAuthorRequestArgs(
+						tq.Args{"service=shell", "cmd=", "scope=foo-scope"},
+					),
+					tq.SetAuthorRequestRemAddr(tq.AuthenRemAddr("2620:10d:c0a8:b3::32")),
+				)
+				u := config.User{
+					Scopes: []string{"foo-scope"},
+					Services: []config.Service{
+						{
+							Name: "shell",
+							Match: []config.Value{
+								{Name: "rem-addr", Values: []string{"2620:1cbd::/64", "2620:10d:c0a8:b3::/64"}},
+							},
+							SetValues: []config.Value{
+								{Name: "priv-lvl", Values: []string{"5"}, Optional: true},
+							},
+						},
+						{
+							Name: "shell",
+							SetValues: []config.Value{
+								{Name: "priv-lvl", Values: []string{"14"}, Optional: true},
+							},
+						},
+					},
+				}
+				u.LocalizeToScope("foo-scope")
+				return r, u
+			},
+			expect: func(t *testing.T, name string, resp []string, status tq.AuthorStatus) {
+				assert.Equal(t, []string{"priv-lvl*5", "priv-lvl*14"}, resp, "%s failed", name)
+				assert.Equal(t, tq.AuthorStatusPassRepl, status, "%s failed", name)
+			},
+		},
+		{
+			name: "no rem addr means rem-addr does not match",
+			setup: func() (*tq.AuthorRequest, config.User) {
+				r := tq.NewAuthorRequest(
+					tq.SetAuthorRequestArgs(
+						tq.Args{"service=shell", "cmd=", "scope=foo-scope"},
+					),
+				)
+				u := config.User{
+					Scopes: []string{"foo-scope"},
+					Services: []config.Service{
+						{
+							Name: "shell",
+							Match: []config.Value{
+								{Name: "rem-addr", Values: []string{"2620:10d:c0a8:b3::31/128"}},
+							},
+							SetValues: []config.Value{
+								{Name: "priv-lvl", Values: []string{"1"}, Optional: true},
+							},
+						},
+						{
+							Name: "shell",
+							SetValues: []config.Value{
+								{Name: "priv-lvl", Values: []string{"14"}, Optional: true},
+							},
+						},
+					},
+				}
+				u.LocalizeToScope("foo-scope")
+				return r, u
+			},
+			expect: func(t *testing.T, name string, resp []string, status tq.AuthorStatus) {
+				assert.Equal(t, []string{"priv-lvl*14"}, resp, "%s failed", name)
+				assert.Equal(t, tq.AuthorStatusPassRepl, status, "%s failed", name)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			r, u := test.setup()
+			ctx := context.Background()
+			sa := NewSessionBasedAuthorizer(ctx, NewDefaultLogger(), *r, u)
+			resp, status := sa.evaluate()
+			test.expect(t, test.name, resp, status)
+		})
 	}
 }
