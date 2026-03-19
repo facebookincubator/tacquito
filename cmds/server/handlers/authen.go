@@ -38,6 +38,7 @@ type authenActionStart struct {
 func (a *AuthenticateStart) Handle(response tq.Response, request tq.Request) {
 	var body tq.AuthenStart
 	if err := tq.Unmarshal(request.Body, &body); err != nil {
+		a.Errorf(request.Context, "expected authenticate start packet for sessionID [%v]: [%v]", request.Header.SessionID, err)
 		authenStartHandleUnexpectedPacket.Inc()
 		authenStartHandleError.Inc()
 		response.ReplyWithContext(
