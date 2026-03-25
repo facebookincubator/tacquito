@@ -244,20 +244,19 @@ func (c crypter) detectBadSecret(p *Packet) (*Packet, error) {
 	if p.Header.Flags.Has(UnencryptedFlag) {
 		return nil, nil
 	}
-	var badSecret *BadSecretErr
 	switch p.Header.Type {
 	case Authenticate:
 		errCnt := 0
 		var as AuthenStart
-		if err := Unmarshal(p.Body, &as); errors.As(err, &badSecret) {
+		if _, ok := errors.AsType[*BadSecretErr](Unmarshal(p.Body, &as)); ok {
 			errCnt++
 		}
 		var ac AuthenContinue
-		if err := Unmarshal(p.Body, &ac); errors.As(err, &badSecret) {
+		if _, ok := errors.AsType[*BadSecretErr](Unmarshal(p.Body, &ac)); ok {
 			errCnt++
 		}
 		var ar AuthenReply
-		if err := Unmarshal(p.Body, &ar); errors.As(err, &badSecret) {
+		if _, ok := errors.AsType[*BadSecretErr](Unmarshal(p.Body, &ar)); ok {
 			errCnt++
 		}
 		if errCnt == 3 {
@@ -268,11 +267,11 @@ func (c crypter) detectBadSecret(p *Packet) (*Packet, error) {
 	case Authorize:
 		errCnt := 0
 		var ar AuthorRequest
-		if err := Unmarshal(p.Body, &ar); errors.As(err, &badSecret) {
+		if _, ok := errors.AsType[*BadSecretErr](Unmarshal(p.Body, &ar)); ok {
 			errCnt++
 		}
 		var arr AuthorReply
-		if err := Unmarshal(p.Body, &arr); errors.As(err, &badSecret) {
+		if _, ok := errors.AsType[*BadSecretErr](Unmarshal(p.Body, &arr)); ok {
 			errCnt++
 		}
 		if errCnt == 2 {
@@ -283,11 +282,11 @@ func (c crypter) detectBadSecret(p *Packet) (*Packet, error) {
 	case Accounting:
 		errCnt := 0
 		var ar AcctRequest
-		if err := Unmarshal(p.Body, &ar); errors.As(err, &badSecret) {
+		if _, ok := errors.AsType[*BadSecretErr](Unmarshal(p.Body, &ar)); ok {
 			errCnt++
 		}
 		var arr AcctReply
-		if err := Unmarshal(p.Body, &arr); errors.As(err, &badSecret) {
+		if _, ok := errors.AsType[*BadSecretErr](Unmarshal(p.Body, &arr)); ok {
 			errCnt++
 		}
 		if errCnt == 2 {

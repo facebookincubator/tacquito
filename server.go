@@ -94,8 +94,7 @@ func (s *Server) Serve(ctx context.Context, listener DeadlineListener) error {
 			}
 			conn, err := listener.Accept()
 			if err != nil {
-				var opE *net.OpError
-				if errors.As(err, &opE) {
+				if opE, ok := errors.AsType[*net.OpError](err); ok {
 					if !opE.Temporary() {
 						serveAcceptedError.Inc()
 						return nil

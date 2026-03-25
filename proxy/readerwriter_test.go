@@ -45,8 +45,7 @@ func TestPeekHAProxy(t *testing.T) {
 			clientAddress: ":",
 			remoteAddress: ":",
 			errorExpected: func(t *testing.T, err error) {
-				var expectedErr net.UnknownNetworkError
-				if errors.As(err, &expectedErr) {
+				if _, ok := errors.AsType[net.UnknownNetworkError](err); ok {
 					return
 				}
 				assert.Fail(t, fmt.Sprintf("expected a net.UnknownNetworkError, got %v", err))
@@ -64,8 +63,7 @@ func TestPeekHAProxy(t *testing.T) {
 			clientAddress: ":",
 			remoteAddress: ":",
 			errorExpected: func(t *testing.T, err error) {
-				var expectedErr HeaderStringMalformed
-				if errors.As(err, &expectedErr) {
+				if _, ok := errors.AsType[HeaderStringMalformed](err); ok {
 					return
 				}
 				assert.Fail(t, fmt.Sprintf("expected a HeaderStringMalformed, got %v", err))
@@ -76,8 +74,7 @@ func TestPeekHAProxy(t *testing.T) {
 			clientAddress: ":",
 			remoteAddress: ":",
 			errorExpected: func(t *testing.T, err error) {
-				var expectedErr HeaderStringMalformed
-				if errors.As(err, &expectedErr) {
+				if _, ok := errors.AsType[HeaderStringMalformed](err); ok {
 					return
 				}
 				assert.Fail(t, fmt.Sprintf("expected a HeaderStringMalformed, got %v", err))
