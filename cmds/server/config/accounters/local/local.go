@@ -104,65 +104,46 @@ func (a Accounter) Handle(response tq.Response, request tq.Request) {
 	// log accounting data
 	a.sink.Printf(string(jsonLog))
 
-	// start/stop/watchdog don't actually log anything, this is up to you
-	switch body.Flags {
-	case tq.AcctFlagStart:
-		response.Reply(
-			tq.NewAcctReply(
-				tq.SetAcctReplyStatus(tq.AcctReplyStatusSuccess),
-				tq.SetAcctReplyServerMsg("success, logging started"),
-			),
-		)
-		return
-	case tq.AcctFlagStop:
+	// use bitmask checks to match flag combinations, mirroring tac_plus behavior.
+	// stop takes priority over start, which takes priority over watchdog.
+	switch {
+	case body.Flags.Has(tq.AcctFlagStop):
 		response.Reply(
 			tq.NewAcctReply(
 				tq.SetAcctReplyStatus(tq.AcctReplyStatusSuccess),
 				tq.SetAcctReplyServerMsg("success, logging stopped"),
 			),
 		)
-		return
-	case tq.AcctFlagWatchdog:
-		if int(request.Header.SeqNo) != 1 {
-			// cannot be seqno > 1
+	case body.Flags.Has(tq.AcctFlagStart):
+		if body.Flags.Has(tq.AcctFlagWatchdog) {
 			response.Reply(
 				tq.NewAcctReply(
-					tq.SetAcctReplyStatus(tq.AcctReplyStatusError),
-					tq.SetAcctReplyServerMsg("invalid sequence number"),
+					tq.SetAcctReplyStatus(tq.AcctReplyStatusSuccess),
+					tq.SetAcctReplyServerMsg("success, watchdog update"),
 				),
 			)
-			return
+		} else {
+			response.Reply(
+				tq.NewAcctReply(
+					tq.SetAcctReplyStatus(tq.AcctReplyStatusSuccess),
+					tq.SetAcctReplyServerMsg("success, logging started"),
+				),
+			)
 		}
+	case body.Flags.Has(tq.AcctFlagWatchdog):
 		response.Reply(
 			tq.NewAcctReply(
 				tq.SetAcctReplyStatus(tq.AcctReplyStatusSuccess),
 				tq.SetAcctReplyServerMsg("success, watchdog"),
 			),
 		)
-		return
-	case tq.AcctFlagWatchdogWithUpdate:
-		if int(request.Header.SeqNo) < 3 {
-			// cannot be seqno 1 or 2
-			response.Reply(
-				tq.NewAcctReply(
-					tq.SetAcctReplyStatus(tq.AcctReplyStatusError),
-					tq.SetAcctReplyServerMsg("invalid sequence number"),
-				),
-			)
-			return
-		}
+	default:
+		a.Errorf(request.Context, "unexpected accounting flag [%v]", body.Flags)
 		response.Reply(
 			tq.NewAcctReply(
-				tq.SetAcctReplyStatus(tq.AcctReplyStatusSuccess),
-				tq.SetAcctReplyServerMsg("success, watchdog update"),
+				tq.SetAcctReplyStatus(tq.AcctReplyStatusError),
+				tq.SetAcctReplyServerMsg("unexpected accounting flag"),
 			),
 		)
-		return
 	}
-	response.Reply(
-		tq.NewAcctReply(
-			tq.SetAcctReplyStatus(tq.AcctReplyStatusError),
-			tq.SetAcctReplyServerMsg("unexpected accounting flag"),
-		),
-	)
 }
