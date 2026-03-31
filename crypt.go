@@ -332,11 +332,10 @@ func (c crypter) unsetFlagReply(h *Header) (*Packet, error) {
 	default:
 		return nil, fmt.Errorf("unknown header type [%v]", h.Type)
 	}
-	// reset some flags and state for this error reply.
-	// under error conditions it can be common in the rfc to reset the sequence to 1
-	// if the error is particularly egregious.  an unset encrypted flag on a TLS connection seems like it fits and
-	// the rfc is unclear for this particular condition on what to do
-	h.SeqNo = SequenceNumber(1)
+	// increment the sequence number so the reply has the correct parity per RFC 8907:
+	// clients send odd, servers send even. incrementing the received packet's SeqNo
+	// produces the correct parity for whichever side is sending the reply.
+	h.SeqNo++
 	h.Flags.Set(UnencryptedFlag)
 
 	return NewPacket(
@@ -379,11 +378,10 @@ func (c crypter) badSecretReply(h *Header) (*Packet, error) {
 	default:
 		return nil, fmt.Errorf("unknown header type [%v]", h.Type)
 	}
-	// reset some flags and state for this error reply.
-	// under error conditions it can be common in the rfc to reset the sequence to 1
-	// if the error is particularly egregious.  a bad secret seems like it fits and
-	// the rfc is unclear for this particular condition on what to do
-	h.SeqNo = SequenceNumber(1)
+	// increment the sequence number so the reply has the correct parity per RFC 8907:
+	// clients send odd, servers send even. incrementing the received packet's SeqNo
+	// produces the correct parity for whichever side is sending the reply.
+	h.SeqNo++
 	p := NewPacket(
 		SetPacketHeader(h),
 		SetPacketBody(b),

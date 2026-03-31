@@ -253,7 +253,7 @@ func TestUnsetFlagReplyAuthenticate(t *testing.T) {
 
 	// Verify the header flags and sequence number have been properly set
 	assert.True(t, reply.Header.Flags.Has(UnencryptedFlag))
-	assert.Equal(t, SequenceNumber(1), reply.Header.SeqNo)
+	assert.Equal(t, SequenceNumber(6), reply.Header.SeqNo)
 
 	// Verify the body contains the expected error response
 	var authenReply AuthenReply
@@ -279,7 +279,7 @@ func TestUnsetFlagReplyAuthorize(t *testing.T) {
 
 	// Verify the header flags and sequence number have been properly set
 	assert.True(t, reply.Header.Flags.Has(UnencryptedFlag))
-	assert.Equal(t, SequenceNumber(1), reply.Header.SeqNo)
+	assert.Equal(t, SequenceNumber(6), reply.Header.SeqNo)
 
 	// Verify the body contains the expected error response
 	var authorReply AuthorReply
@@ -305,7 +305,7 @@ func TestUnsetFlagReplyAccounting(t *testing.T) {
 
 	// Verify the header flags and sequence number have been properly set
 	assert.True(t, reply.Header.Flags.Has(UnencryptedFlag))
-	assert.Equal(t, SequenceNumber(1), reply.Header.SeqNo)
+	assert.Equal(t, SequenceNumber(6), reply.Header.SeqNo)
 
 	// Verify the body contains the expected error response
 	var acctReply AcctReply
@@ -344,8 +344,8 @@ func TestBadSecretReplyAuthenticate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, reply)
 
-	// Verify the sequence number has been reset
-	assert.Equal(t, SequenceNumber(1), reply.Header.SeqNo)
+	// Verify the sequence number has been incremented
+	assert.Equal(t, SequenceNumber(6), reply.Header.SeqNo)
 
 	// Verify the body contains the expected error response
 	var authenReply AuthenReply
@@ -369,8 +369,8 @@ func TestBadSecretReplyAuthorize(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, reply)
 
-	// Verify the sequence number has been reset
-	assert.Equal(t, SequenceNumber(1), reply.Header.SeqNo)
+	// Verify the sequence number has been incremented
+	assert.Equal(t, SequenceNumber(6), reply.Header.SeqNo)
 
 	// Verify the body contains the expected error response
 	var authorReply AuthorReply
@@ -394,8 +394,8 @@ func TestBadSecretReplyAccounting(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, reply)
 
-	// Verify the sequence number has been reset
-	assert.Equal(t, SequenceNumber(1), reply.Header.SeqNo)
+	// Verify the sequence number has been incremented
+	assert.Equal(t, SequenceNumber(6), reply.Header.SeqNo)
 
 	// Verify the body contains the expected error response
 	var acctReply AcctReply
