@@ -17,6 +17,7 @@ import (
 	tq "github.com/facebookincubator/tacquito"
 	"github.com/facebookincubator/tacquito/cmds/server/config"
 	"github.com/facebookincubator/tacquito/cmds/server/config/accounters/local"
+	"github.com/facebookincubator/tacquito/cmds/server/config/accounters/syslog"
 	"github.com/facebookincubator/tacquito/cmds/server/config/authenticators/bcrypt"
 	"github.com/facebookincubator/tacquito/cmds/server/config/authorizers/stringy"
 	"github.com/facebookincubator/tacquito/cmds/server/log"
@@ -70,6 +71,14 @@ func main() {
 		return
 	}
 
+	// set up syslog accounter
+	syslogWriter, err := syslog.NewDefaultWriter()
+	if err != nil {
+		logger.Fatalf(ctx, "error creating syslog writer; %v", err)
+		return
+	}
+	syslogAccounter := syslog.New(logger, syslogWriter)
+
 	shhh := &shh{}
 	sp, err := loader.NewLocalConfig(
 		ctx,
@@ -83,6 +92,7 @@ func main() {
 		loader.RegisterHandlerType(config.START, handlers.NewStart(logger)),
 		loader.RegisterAuthenticator(config.BCRYPT, bcrypt.New(logger, shhh)),
 		loader.RegisterAccounter(config.FILE, accountingLogger),
+		loader.RegisterAccounter(config.SYSLOG, syslogAccounter),
 	)
 	if err != nil {
 		logger.Fatalf(ctx, "error fetching config; %v", err)

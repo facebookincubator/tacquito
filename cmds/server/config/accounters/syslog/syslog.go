@@ -10,6 +10,7 @@
 package syslog
 
 import (
+	"context"
 	"encoding/json"
 	"log/syslog"
 
@@ -18,14 +19,18 @@ import (
 
 // loggerProvider provides the logging implementation for local server events
 type loggerProvider interface {
-	Infof(format string, args ...interface{})
-	Errorf(format string, args ...interface{})
+	Infof(ctx context.Context, format string, args ...interface{})
+	Errorf(ctx context.Context, format string, args ...interface{})
 }
 
 // Accounter that writes to system log service
 type Accounter struct {
 	loggerProvider // local server event logger
 	*syslog.Writer // syslog writer
+}
+
+func NewDefaultWriter() (*syslog.Writer, error) {
+	return syslog.New(syslog.LOG_INFO, "tacquito")
 }
 
 // New ...
@@ -59,7 +64,7 @@ func (a Accounter) Handle(response tq.Response, request tq.Request) {
 				tq.SetAcctReplyServerMsg("failed to log accounting message"),
 			),
 		)
-		a.Errorf("failed marshal accounting log: %v", err)
+		a.Errorf(request.Context, "failed marshal accounting log: %v", err)
 		return
 
 	}
@@ -72,7 +77,7 @@ func (a Accounter) Handle(response tq.Response, request tq.Request) {
 				tq.SetAcctReplyServerMsg("failed to log accounting message"),
 			),
 		)
-		a.Errorf("failed to write accounting data to syslog: %v", err)
+		a.Errorf(request.Context, "failed to write accounting data to syslog: %v", err)
 		return
 
 	}
@@ -111,7 +116,7 @@ func (a Accounter) Handle(response tq.Response, request tq.Request) {
 			),
 		)
 	default:
-		a.Errorf("unexpected accounting flag [%v]", body.Flags)
+		a.Errorf(request.Context, "unexpected accounting flag [%v]", body.Flags)
 		response.Reply(
 			tq.NewAcctReply(
 				tq.SetAcctReplyStatus(tq.AcctReplyStatusError),

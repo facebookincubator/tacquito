@@ -59,6 +59,7 @@ pipe: &pipe
 
 # accounter type which maps to tacquito/cmds/server/config/accounters/local
 accounter_type_file: &accounter_type_file 3
+accounter_type_syslog: &accounter_type_syslog 2
 
 # local file accounter
 file_accounter: &file_accounter
@@ -66,6 +67,12 @@ file_accounter: &file_accounter
   name: example_accounter
   # accounter type - this must be injected in main.go
   type: *accounter_type_file
+
+syslog_accounter: &syslog_accounter
+  # name is simply for the reader
+  name: example_accounter_syslog
+  # accounter type - this must be injected in main.go
+  type: *accounter_type_syslog
 
 # groups
 rw: &rw
@@ -84,6 +91,7 @@ rw: &rw
   # authenticator backend - this must be injected in main.go
   authenticator: *bcrypt
   # accounter backend - this must be injected in main.go
+  # accounter: *syslog_accounter
   accounter: *file_accounter
 
 
