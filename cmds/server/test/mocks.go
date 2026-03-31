@@ -82,3 +82,31 @@ func (s *shh) GetSecret(ctx context.Context, name, group string) ([]byte, error)
 	fmt.Println(name, group)
 	return []byte("cisco"), nil
 }
+
+// mockedResponse implements the Response interface for handler-level tests
+type mockedResponse struct {
+	got  tq.EncoderDecoder
+	next tq.Handler
+}
+
+func newMockedResponse() *mockedResponse {
+	return &mockedResponse{}
+}
+
+func (r *mockedResponse) Reply(v tq.EncoderDecoder) (int, error) {
+	r.got = v
+	return 0, nil
+}
+
+func (r *mockedResponse) ReplyWithContext(_ context.Context, v tq.EncoderDecoder, _ ...tq.Writer) (int, error) {
+	return r.Reply(v)
+}
+
+func (r *mockedResponse) Write(_ *tq.Packet) (int, error) { return 0, nil }
+
+func (r *mockedResponse) Next(next tq.Handler) {
+	r.next = next
+}
+
+func (r *mockedResponse) RegisterWriter(_ tq.Writer) {}
+func (r *mockedResponse) Context(_ context.Context)  {}
