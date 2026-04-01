@@ -24,8 +24,8 @@ type syslogAcctLogger struct {
 	errors []string
 }
 
-func (m *syslogAcctLogger) Infof(_ string, _ ...interface{}) {}
-func (m *syslogAcctLogger) Errorf(format string, args ...interface{}) {
+func (m *syslogAcctLogger) Infof(_ context.Context, _ string, _ ...interface{}) {}
+func (m *syslogAcctLogger) Errorf(_ context.Context, format string, args ...interface{}) {
 	m.errors = append(m.errors, fmt.Sprintf(format, args...))
 }
 
