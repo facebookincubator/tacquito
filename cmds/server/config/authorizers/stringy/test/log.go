@@ -14,13 +14,6 @@ import (
 	"os"
 )
 
-// loggerProvider provides the logging implementation
-type loggerProvider interface {
-	Infof(ctx context.Context, format string, args ...interface{})
-	Errorf(ctx context.Context, format string, args ...interface{})
-	Debugf(ctx context.Context, format string, args ...interface{})
-}
-
 // newDefaultLogger provides a basic logger if one is not provided
 // levels: 10 error, 20 info, 30 debug.  fatal has no level
 func newDefaultLogger(level int) *defaultLogger {
