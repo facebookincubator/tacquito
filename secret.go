@@ -18,3 +18,11 @@ import (
 type SecretProvider interface {
 	Get(ctx context.Context, remote net.Addr) ([]byte, Handler, error)
 }
+
+// MultiSecretProvider is an optional extension to SecretProvider.  Implementations
+// return all candidate secrets for a remote.  The server tries each in order on
+// the first packet of a connection and uses the first that yields a parseable
+// body, allowing hitless shared-secret rotation.  The Handler is per-source.
+type MultiSecretProvider interface {
+	GetSecrets(ctx context.Context, remote net.Addr) ([][]byte, Handler, error)
+}
