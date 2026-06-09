@@ -247,7 +247,7 @@ func TestUnsetFlagReplyAuthenticate(t *testing.T) {
 		SetHeaderSeqNo(5),
 	)
 
-	reply, err := c.unsetFlagReply(header)
+	reply, err := c.unsetFlagReply(*header)
 	assert.NoError(t, err)
 	assert.NotNil(t, reply)
 
@@ -273,7 +273,7 @@ func TestUnsetFlagReplyAuthorize(t *testing.T) {
 		SetHeaderSeqNo(5),
 	)
 
-	reply, err := c.unsetFlagReply(header)
+	reply, err := c.unsetFlagReply(*header)
 	assert.NoError(t, err)
 	assert.NotNil(t, reply)
 
@@ -299,7 +299,7 @@ func TestUnsetFlagReplyAccounting(t *testing.T) {
 		SetHeaderSeqNo(5),
 	)
 
-	reply, err := c.unsetFlagReply(header)
+	reply, err := c.unsetFlagReply(*header)
 	assert.NoError(t, err)
 	assert.NotNil(t, reply)
 
@@ -324,7 +324,7 @@ func TestUnsetFlagReplyInvalidType(t *testing.T) {
 		SetHeaderSessionID(12345),
 	)
 
-	reply, err := c.unsetFlagReply(header)
+	reply, err := c.unsetFlagReply(*header)
 	assert.Error(t, err)
 	assert.Nil(t, reply)
 	assert.Contains(t, err.Error(), "unknown header type")
@@ -340,7 +340,7 @@ func TestBadSecretReplyAuthenticate(t *testing.T) {
 		SetHeaderSeqNo(5),
 	)
 
-	reply, err := c.badSecretReply(header)
+	reply, err := c.badSecretReply(*header)
 	assert.NoError(t, err)
 	assert.NotNil(t, reply)
 
@@ -365,7 +365,7 @@ func TestBadSecretReplyAuthorize(t *testing.T) {
 		SetHeaderSeqNo(5),
 	)
 
-	reply, err := c.badSecretReply(header)
+	reply, err := c.badSecretReply(*header)
 	assert.NoError(t, err)
 	assert.NotNil(t, reply)
 
@@ -390,7 +390,7 @@ func TestBadSecretReplyAccounting(t *testing.T) {
 		SetHeaderSeqNo(5),
 	)
 
-	reply, err := c.badSecretReply(header)
+	reply, err := c.badSecretReply(*header)
 	assert.NoError(t, err)
 	assert.NotNil(t, reply)
 
@@ -414,7 +414,7 @@ func TestBadSecretReplyInvalidType(t *testing.T) {
 		SetHeaderSessionID(12345),
 	)
 
-	reply, err := c.badSecretReply(header)
+	reply, err := c.badSecretReply(*header)
 	assert.Error(t, err)
 	assert.Nil(t, reply)
 	assert.Contains(t, err.Error(), "unknown header type")
