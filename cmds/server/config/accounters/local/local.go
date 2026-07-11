@@ -102,7 +102,7 @@ func (a Accounter) Handle(response tq.Response, request tq.Request) {
 	}
 
 	// log accounting data
-	a.sink.Printf(string(jsonLog))
+	a.sink.Printf("%s", string(jsonLog))
 
 	// use bitmask checks to match flag combinations, mirroring tac_plus behavior.
 	// stop takes priority over start, which takes priority over watchdog.
