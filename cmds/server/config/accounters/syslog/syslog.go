@@ -19,8 +19,8 @@ import (
 
 // loggerProvider provides the logging implementation for local server events
 type loggerProvider interface {
-	Infof(ctx context.Context, format string, args ...interface{})
-	Errorf(ctx context.Context, format string, args ...interface{})
+	Infof(ctx context.Context, format string, args ...any)
+	Errorf(ctx context.Context, format string, args ...any)
 }
 
 // Accounter that writes to system log service
