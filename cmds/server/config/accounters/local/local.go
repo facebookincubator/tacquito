@@ -20,13 +20,13 @@ import (
 
 // loggerProvider provides the logging implementation for local server events
 type loggerProvider interface {
-	Infof(ctx context.Context, format string, args ...interface{})
-	Errorf(ctx context.Context, format string, args ...interface{})
+	Infof(ctx context.Context, format string, args ...any)
+	Errorf(ctx context.Context, format string, args ...any)
 }
 
 // our log.Logger interface
 type acctLogger interface {
-	Printf(format string, args ...interface{})
+	Printf(format string, args ...any)
 }
 
 // Option is the setter type for Accounter
