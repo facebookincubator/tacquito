@@ -22,8 +22,8 @@ type localAcctLogger struct {
 	errors []string
 }
 
-func (m *localAcctLogger) Infof(_ context.Context, _ string, _ ...interface{}) {}
-func (m *localAcctLogger) Errorf(_ context.Context, format string, args ...interface{}) {
+func (m *localAcctLogger) Infof(_ context.Context, _ string, _ ...any) {}
+func (m *localAcctLogger) Errorf(_ context.Context, format string, args ...any) {
 	m.errors = append(m.errors, fmt.Sprintf(format, args...))
 }
 
@@ -32,7 +32,7 @@ type localAcctSink struct {
 	messages []string
 }
 
-func (m *localAcctSink) Printf(format string, args ...interface{}) {
+func (m *localAcctSink) Printf(format string, args ...any) {
 	m.messages = append(m.messages, fmt.Sprintf(format, args...))
 }
 
