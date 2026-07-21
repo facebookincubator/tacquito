@@ -22,9 +22,9 @@ import (
 
 // loggerProvider provides the logging implementation
 type loggerProvider interface {
-	Infof(ctx context.Context, format string, args ...interface{})
-	Errorf(ctx context.Context, format string, args ...interface{})
-	Debugf(ctx context.Context, format string, args ...interface{})
+	Infof(ctx context.Context, format string, args ...any)
+	Errorf(ctx context.Context, format string, args ...any)
+	Debugf(ctx context.Context, format string, args ...any)
 }
 
 // keychainProvider will supply the pre-shard key for tacacs, ideally from secure storage
