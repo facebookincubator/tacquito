@@ -14,8 +14,6 @@ import (
 	"net"
 	"testing"
 
-	"libfb/go/buildinfo"
-
 	tq "github.com/facebookincubator/tacquito"
 	"github.com/facebookincubator/tacquito/cmds/server/log"
 
@@ -79,12 +77,6 @@ func TestPacketExchangeAsciiLoginUsingSharedClientAllocation(t *testing.T) {
 				assert.EqualValues(t, expectedAllocs, actual, fmt.Sprintf("%s allocations were not nominal; wanted %v got %v", name, expectedAllocs, actual))
 			},
 		},
-	}
-	if buildinfo.BuildMode != "opt" {
-		t.Skip(
-			"dev-asan runs of this test produce different results for allocations than " +
-				"dev or opt mode builds. We can't skip dev-asan specifically, but we can " +
-				"skip all dev modes and focus on opt mode runs.")
 	}
 	for _, test := range tests {
 		r := testing.Benchmark(test.fn)
