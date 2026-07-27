@@ -24,8 +24,8 @@ import (
 
 // loggerProvider provides the logging implementation
 type loggerProvider interface {
-	Infof(ctx context.Context, format string, args ...interface{})
-	Errorf(ctx context.Context, format string, args ...interface{})
+	Infof(ctx context.Context, format string, args ...any)
+	Errorf(ctx context.Context, format string, args ...any)
 	Record(ctx context.Context, r map[string]string, obscure ...string)
 }
 
