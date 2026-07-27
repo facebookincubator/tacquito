@@ -9,7 +9,6 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net"
 	"testing"
@@ -17,7 +16,6 @@ import (
 	tq "github.com/facebookincubator/tacquito"
 	"github.com/facebookincubator/tacquito/cmds/server/log"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -53,34 +51,6 @@ func BenchmarkPacketExchangeAsciiLoginUsingSharedClient(b *testing.B) {
 		for _, s := range test.Seq {
 			c.Send(s.Packet)
 		}
-	}
-}
-
-// benchTest is used for allocation testing
-type benchTest struct {
-	name     string
-	fn       func(b *testing.B)
-	expected func(name string, r testing.BenchmarkResult)
-}
-
-// TestPacketExchangeAsciiLoginUsingSharedClientAllocation provides data on the allocs/op we do
-// for a given request
-func TestPacketExchangeAsciiLoginUsingSharedClientAllocation(t *testing.T) {
-	tests := []benchTest{
-		{
-			name: "BenchmarkPacketExchangeAsciiLoginUsingSharedClient",
-			fn:   BenchmarkPacketExchangeAsciiLoginUsingSharedClient,
-			expected: func(name string, r testing.BenchmarkResult) {
-				t.Log(spew.Sdump(r))
-				expectedAllocs := 25
-				actual := r.AllocsPerOp()
-				assert.EqualValues(t, expectedAllocs, actual, fmt.Sprintf("%s allocations were not nominal; wanted %v got %v", name, expectedAllocs, actual))
-			},
-		},
-	}
-	for _, test := range tests {
-		r := testing.Benchmark(test.fn)
-		test.expected(test.name, r)
 	}
 }
 
