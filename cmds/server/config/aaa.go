@@ -13,8 +13,8 @@ import (
 
 // loggerProvider provides the logging implementation
 type loggerProvider interface {
-	Infof(format string, args ...interface{})
-	Errorf(format string, args ...interface{})
+	Infof(format string, args ...any)
+	Errorf(format string, args ...any)
 }
 
 // AAAOption ...
