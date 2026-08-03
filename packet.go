@@ -147,7 +147,7 @@ func (p *Packet) Fields() map[string]string {
 type Field interface {
 	// Validate is executed on all MarshalBinary and UnmarshalBinary operations on
 	// Authenticate, Authorize and Accounting Packet types
-	Validate(condition interface{}) error
+	Validate(condition any) error
 
 	// Len of Field value
 	Len() int

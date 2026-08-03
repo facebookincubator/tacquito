@@ -265,7 +265,7 @@ func TestLoadTLSConfig(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		configJSON   map[string]interface{}
+		configJSON   map[string]any
 		shouldErr    bool
 		errMsg       string
 		validateFunc func(*testing.T, *ParsedTLSConfig)

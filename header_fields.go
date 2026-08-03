@@ -193,7 +193,7 @@ func (t ClientSequenceNumber) Validate(condition interface{}) error {
 type LastSequence uint8
 
 // Validate ensures we have a sane progression of sequence numbers in a packet exchange
-func (t LastSequence) Validate(condition interface{}) error {
+func (t LastSequence) Validate(condition any) error {
 	last := uint8(t)
 	var current uint8
 	switch v := condition.(type) {

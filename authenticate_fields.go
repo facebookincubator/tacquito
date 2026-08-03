@@ -354,7 +354,7 @@ func (t AuthenData) Len() int {
 }
 
 // Validate length of value
-func (t AuthenData) Validate(condition interface{}) error {
+func (t AuthenData) Validate(condition any) error {
 	// https://datatracker.ietf.org/doc/html/rfc8907#section-5.4.2
 	// In an ascii login, this must be ascii, but in other's it is per rfc8907
 	switch atype := condition.(type) {
