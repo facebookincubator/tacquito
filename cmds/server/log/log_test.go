@@ -26,6 +26,15 @@ type benchTest struct {
 
 // TestLog0 benchmarks allocations for our logger
 func TestLog0Allocation(t *testing.T) {
+	// The race detector's instrumentation changes escape analysis and the
+	// iteration count the benchmark settles on. AllocsPerOp is an integer
+	// division of total allocations by that count, so under -race the variadic
+	// case intermittently rounds up to one allocation more than the
+	// uninstrumented build makes. Only assert exact counts where they are
+	// meaningful.
+	if raceEnabled {
+		t.Skip("allocation counts are not stable under the race detector")
+	}
 	tests := []benchTest{
 		{
 			name: "BenchmarkLog0",
