@@ -24,10 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
 func asciiSmasher(sessionID int) Test {
 	return Test{
 		Name: fmt.Sprintf("authen smasher test [%v]", sessionID),
@@ -286,7 +282,7 @@ func TestSurge(t *testing.T) {
 		}()
 	}
 	var wg sync.WaitGroup
-	for range numberOfClients {
+	for i := 0; i < numberOfClients; i++ {
 		wg.Add(1)
 		do(queue, &wg)
 	}
@@ -364,7 +360,7 @@ func TestSurgeTLS(t *testing.T) {
 		}()
 	}
 	var wg sync.WaitGroup
-	for i := 0; i < numberOfClients; i++ {
+	for range numberOfClients {
 		wg.Add(1)
 		do(queue, &wg)
 	}
