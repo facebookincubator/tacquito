@@ -272,7 +272,7 @@ func TestLoadTLSConfig(t *testing.T) {
 	}{
 		{
 			name: "valid config with absolute paths",
-			configJSON: map[string]interface{}{
+			configJSON: map[string]any{
 				"cert_file":            certFile,
 				"key_file":             keyFile,
 				"ca_file":              caFile,
@@ -289,7 +289,7 @@ func TestLoadTLSConfig(t *testing.T) {
 		},
 		{
 			name: "config with relative paths",
-			configJSON: map[string]interface{}{
+			configJSON: map[string]any{
 				"cert_file": "./server.crt",
 				"key_file":  "./server.key",
 				"ca_file":   "./ca.crt",
@@ -309,7 +309,7 @@ func TestLoadTLSConfig(t *testing.T) {
 		},
 		{
 			name: "cert without key",
-			configJSON: map[string]interface{}{
+			configJSON: map[string]any{
 				"cert_file": certFile,
 			},
 			shouldErr: true,
@@ -317,7 +317,7 @@ func TestLoadTLSConfig(t *testing.T) {
 		},
 		{
 			name: "non-existent files",
-			configJSON: map[string]interface{}{
+			configJSON: map[string]any{
 				"cert_file": "/non/existent/cert.pem",
 				"key_file":  "/non/existent/key.pem",
 			},

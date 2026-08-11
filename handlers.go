@@ -9,6 +9,7 @@ package tacquito
 
 import (
 	"context"
+	"maps"
 )
 
 // Writer is an abstraction used for adding Writers to the response object
@@ -144,9 +145,7 @@ func (r Request) Fields(keys ...ContextKey) map[string]string {
 	// merge will add our header fields to the body
 	// the rfc doesn't contain fields that collide
 	merge := func(a, b map[string]string) {
-		for k, v := range b {
-			a[k] = v
-		}
+		maps.Copy(a, b)
 	}
 	switch r.Header.Type {
 	case Authenticate:
