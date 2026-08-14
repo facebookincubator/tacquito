@@ -43,8 +43,8 @@ type specialMatchTest struct {
 
 // shuffle is used to shuffle the args in tests
 func shuffle(args tq.Args) {
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(args), func(i, j int) { args[i], args[j] = args[j], args[i] })
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r.Shuffle(len(args), func(i, j int) { args[i], args[j] = args[j], args[i] })
 }
 
 func TestSpecialMatchers(t *testing.T) {
