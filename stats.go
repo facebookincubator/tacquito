@@ -58,6 +58,11 @@ var (
 		Name:      "crypter_badSecret",
 		Help:      "number of bad secrets",
 	})
+	crypterAltSecretSelected = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "tacquito",
+		Name:      "crypter_alt_secret_selected",
+		Help:      "number of connections that selected an alternate secret",
+	})
 	crypterUnmarshalError = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "tacquito",
 		Name:      "crypter_unmarshal_error",
@@ -135,6 +140,7 @@ func init() {
 	prometheus.MustRegister(crypterWrite)
 	prometheus.MustRegister(crypterWriteError)
 	prometheus.MustRegister(crypterBadSecret)
+	prometheus.MustRegister(crypterAltSecretSelected)
 	prometheus.MustRegister(crypterUnmarshalError)
 	prometheus.MustRegister(crypterMarshalError)
 	prometheus.MustRegister(crypterCryptError)
