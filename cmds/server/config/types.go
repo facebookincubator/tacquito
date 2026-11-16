@@ -9,6 +9,7 @@ package config
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -56,12 +57,7 @@ type User struct {
 
 // HasScope returns bool if scope is found to be bound to this user
 func (u User) HasScope(scope string) bool {
-	for _, s := range u.Scopes {
-		if scope == s {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(u.Scopes, scope)
 }
 
 // LocalizeToScope will set the Scopes field to the supplied scope name
