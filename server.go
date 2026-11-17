@@ -124,8 +124,21 @@ func (s *Server) serve(ctx context.Context, conn net.Conn) {
 	defer timer.ObserveDuration()
 	// start a timer to measure loader duration
 	loaderStart := time.Now()
-	secret, handler, err := s.Get(ctx, conn.RemoteAddr())
-	if err != nil || secret == nil || handler == nil {
+	var (
+		secrets [][]byte
+		handler Handler
+		err     error
+	)
+	if msp, ok := s.SecretProvider.(MultiSecretProvider); ok {
+		secrets, handler, err = msp.GetSecrets(ctx, conn.RemoteAddr())
+	} else {
+		var secret []byte
+		secret, handler, err = s.Get(ctx, conn.RemoteAddr())
+		if secret != nil {
+			secrets = [][]byte{secret}
+		}
+	}
+	if err != nil || len(secrets) == 0 || secrets[0] == nil || handler == nil {
 		s.Errorf(ctx, "ignoring request: %v", err)
 		conn.Close()
 		timer.ObserveDuration()
@@ -133,7 +146,11 @@ func (s *Server) serve(ctx context.Context, conn net.Conn) {
 	}
 	ctx = context.WithValue(ctx, ContextLoaderDuration, time.Since(loaderStart).Milliseconds())
 	serveAccepted.Inc()
-	s.handle(ctx, newCrypter(secret, conn, s.proxy, s.useTLS), handler)
+	cr := newCrypter(secrets[0], conn, s.proxy, s.useTLS)
+	if len(secrets) > 1 {
+		cr.altSecrets = secrets[1:]
+	}
+	s.handle(ctx, cr, handler)
 	serveAccepted.Dec()
 }
 

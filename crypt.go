@@ -110,6 +110,10 @@ type crypter struct {
 	// setting the tls parameters enables RFC 9887 specific handling
 	// within the crypter
 	tls bool
+
+	// altSecrets are tried in order on the first read() when secret
+	// fails detectBadSecret; the first match becomes secret thereafter
+	altSecrets [][]byte
 }
 
 // read will read a packet from the underlying net.Conn and decyrpt it
@@ -170,9 +174,29 @@ func (c *crypter) read() (*Packet, error) {
 		// if reply is != nil, we found a bad secret.
 		// if both are non nil, we only inspect the error as that
 		// is a higher error condition in the server than a bad secret is
-		if reply, err := c.detectBadSecret(&p); err != nil {
+		reply, err := c.detectBadSecret(&p)
+		if err != nil {
 			return nil, err
-		} else if reply != nil {
+		}
+		// MultiSecretProvider: retry alternates from a snapshot of the
+		// obfuscated body (first packet only).
+		if reply != nil && len(c.altSecrets) > 0 {
+			// b holds the original obfuscated body; p.Body is a separate alloc after Unmarshal
+			obfuscated := b
+			for _, cand := range c.altSecrets {
+				p.Body = append(p.Body[:0], obfuscated...)
+				// header conditions already validated on the primary attempt above
+				_ = crypt(cand, &p)
+				reply, _ = c.detectBadSecret(&p)
+				if reply == nil {
+					c.secret = cand
+					crypterAltSecretSelected.Inc()
+					break
+				}
+			}
+		}
+		c.altSecrets = nil
+		if reply != nil {
 			if _, err := c.write(reply); err != nil {
 				return nil, fmt.Errorf("bad secret, crypt write fail for ip [%s]: %w", c.RemoteAddr().String(), err)
 			}
@@ -187,7 +211,7 @@ func (c *crypter) read() (*Packet, error) {
 		*/
 		if !p.Header.Flags.Has(UnencryptedFlag) {
 			crypterReadFlagError.Inc()
-			reply, err := c.unsetFlagReply(p.Header)
+			reply, err := c.unsetFlagReply(*p.Header)
 			if err != nil {
 				return nil, err
 			}
@@ -262,7 +286,7 @@ func (c crypter) detectBadSecret(p *Packet) (*Packet, error) {
 		if errCnt == 3 {
 			crypterBadSecret.Inc()
 			// all packet types failed, most likley a bad secret
-			return c.badSecretReply(p.Header)
+			return c.badSecretReply(*p.Header)
 		}
 	case Authorize:
 		errCnt := 0
@@ -277,7 +301,7 @@ func (c crypter) detectBadSecret(p *Packet) (*Packet, error) {
 		if errCnt == 2 {
 			crypterBadSecret.Inc()
 			// all packet types failed, most likley a bad secret
-			return c.badSecretReply(p.Header)
+			return c.badSecretReply(*p.Header)
 		}
 	case Accounting:
 		errCnt := 0
@@ -292,13 +316,13 @@ func (c crypter) detectBadSecret(p *Packet) (*Packet, error) {
 		if errCnt == 2 {
 			crypterBadSecret.Inc()
 			// all packet types failed, most likley a bad secret
-			return c.badSecretReply(p.Header)
+			return c.badSecretReply(*p.Header)
 		}
 	}
 	return nil, nil
 }
 
-func (c crypter) unsetFlagReply(h *Header) (*Packet, error) {
+func (c crypter) unsetFlagReply(h Header) (*Packet, error) {
 	var b []byte
 	var err error
 	switch h.Type {
@@ -339,12 +363,15 @@ func (c crypter) unsetFlagReply(h *Header) (*Packet, error) {
 	h.Flags.Set(UnencryptedFlag)
 
 	return NewPacket(
-		SetPacketHeader(h),
+		SetPacketHeader(&h),
 		SetPacketBody(b),
 	), nil
 }
 
-func (c crypter) badSecretReply(h *Header) (*Packet, error) {
+// badSecretReply builds the error reply for a presumed bad secret. It
+// takes Header by value so the caller's request header is not mutated;
+// the reply's Length and SeqNo differ from the request's.
+func (c crypter) badSecretReply(h Header) (*Packet, error) {
 	var b []byte
 	var err error
 	switch h.Type {
@@ -383,7 +410,7 @@ func (c crypter) badSecretReply(h *Header) (*Packet, error) {
 	// produces the correct parity for whichever side is sending the reply.
 	h.SeqNo++
 	p := NewPacket(
-		SetPacketHeader(h),
+		SetPacketHeader(&h),
 		SetPacketBody(b),
 	)
 	if err != nil {
