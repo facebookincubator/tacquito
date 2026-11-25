@@ -129,6 +129,16 @@ func TestAuthenReplyMarshalUnmarshal(t *testing.T) {
 	assert.Equal(t, v, decoded)
 }
 
+func TestAuthenReplyUnmarshalTooShort(t *testing.T) {
+	// status, flags, server_msg_len and data_len are 6 octets, RFC 8907 5.2
+	decoded := &AuthenReply{}
+	err := decoded.UnmarshalBinary([]byte{0x01, 0x00, 0x00, 0x00, 0x00})
+	assert.Error(t, err)
+
+	err = decoded.UnmarshalBinary([]byte{0x01, 0x00, 0x00, 0x00, 0x00, 0x00})
+	assert.NoError(t, err)
+}
+
 func TestAuthenContinueMarshalUnmarshal(t *testing.T) {
 	v := NewAuthenContinue(
 		SetAuthenContinueUserMessage("\nmore prompting"),
