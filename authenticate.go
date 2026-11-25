@@ -312,7 +312,7 @@ func (a AuthenContinue) Fields() map[string]string {
 }
 
 // AuthenReplyLen minumum length of this packet type
-const AuthenReplyLen = 0x05
+const AuthenReplyLen = 0x06
 
 // AuthenReplyOption is used to inject options when creating new AuthenReply types
 type AuthenReplyOption func(*AuthenReply)
